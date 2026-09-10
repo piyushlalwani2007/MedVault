@@ -45,7 +45,7 @@ ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
-origins = [value.strip() for value in os.getenv('CORS_ORIGIN', 'http://localhost:8000,http://localhost:3000').split(',') if value.strip()]
+origins = [value.strip() for value in os.getenv('CORS_ORIGIN', 'http://localhost:8000,http://localhost:3000,https://med-vault-ddcjxwt2z-piyushlalwani085-6632s-projects.vercel.app').split(',') if value.strip()]
 CORS(app, origins=origins or '*', supports_credentials=True)
 
 
@@ -468,6 +468,11 @@ def all_discharges():
 @app.get('/api/index.py')
 @app.get('/api')
 def function_health():
+    return jsonify(success=True, service='Hospital Discharge System API', status='ok')
+
+
+@app.get('/')
+def service_health():
     return jsonify(success=True, service='Hospital Discharge System API', status='ok')
 
 
