@@ -523,7 +523,11 @@ def update_discharge(discharge_id):
 
 def run_local_ocr(file_path):
     if pytesseract is None:
-        raise RuntimeError('Install pytesseract and the Tesseract system package to use local OCR.')
+        raise RuntimeError('Python OCR dependencies are missing. Redeploy after installing backend/requirements.txt.')
+    try:
+        pytesseract.get_tesseract_version()
+    except Exception as exc:
+        raise RuntimeError('Tesseract OCR engine is not installed on the server. Render must install backend/apt.txt and redeploy.') from exc
     image = Image.open(file_path)
     image = ImageOps.grayscale(image)
     image = ImageEnhance.Contrast(image).enhance(1.5)
