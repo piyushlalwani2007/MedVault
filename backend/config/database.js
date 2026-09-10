@@ -1,16 +1,26 @@
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 const path = require('path');
 
 const configuredDatabasePath = process.env.DATABASE_PATH || 'database.sqlite';
-const dbPath = path.isAbsolute(configuredDatabasePath)
+const localDatabasePath = path.isAbsolute(configuredDatabasePath)
   ? configuredDatabasePath
   : path.resolve(__dirname, '../../', configuredDatabasePath);
+const dbPath = process.env.VERCEL === '1'
+  ? path.join('/tmp', 'hospital-discharge.sqlite')
+  : localDatabasePath;
+
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+
+if (process.env.VERCEL === '1' && !fs.existsSync(dbPath) && fs.existsSync(localDatabasePath)) {
+  fs.copyFileSync(localDatabasePath, dbPath);
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('❌ Database connection error:', err);
   } else {
-    console.log('✅ SQLite Database connected');
+    console.log(`✅ SQLite Database connected: ${dbPath}`);
     db.run('PRAGMA foreign_keys = ON');
     initializeTables();
   }
