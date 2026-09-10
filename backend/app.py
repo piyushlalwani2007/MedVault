@@ -50,7 +50,8 @@ origins = list(dict.fromkeys(configured_origins + [
     'http://localhost:8000',
     'http://localhost:3000',
     'https://med-vault-ddcjxwt2z-piyushlalwani085-6632s-projects.vercel.app',
-    'https://medvault-mfe457yce-piyushlalwani085-6632s-projects.vercel.app'
+    'https://medvault-mfe457yce-piyushlalwani085-6632s-projects.vercel.app',
+    'https://medvault-ochre-five.vercel.app'
 ]))
 CORS(app, origins=origins or '*', supports_credentials=True)
 
