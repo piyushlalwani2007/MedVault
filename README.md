@@ -40,3 +40,5 @@ Start command: waitress-serve --host=0.0.0.0 --port=$PORT app:app
 ```
 
 After Render gives you a backend URL, set `window.HOSPITAL_API_URL` in `frontend/js/api.js` to that URL ending in `/api`, for example `https://your-service.onrender.com/api`, then push and redeploy the frontend on Vercel. Set the Flask `CORS_ORIGIN` environment variable to the Vercel frontend URL.
+
+In the Vercel project settings, set **Root Directory** to `frontend` and redeploy. This is required because the Flask backend lives in `backend/app.py`; leaving the Vercel root as the repository root makes Vercel try to detect Python and display the entrypoint warning.
