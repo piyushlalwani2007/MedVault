@@ -1,0 +1,25 @@
+:root {
+  --bg: #F3F6F5;
+  --surface: #FFFFFF;
+  --surface-alt: #EBF1EF;
+  --ink: #12201D;
+  --ink-soft: #51625F;
+  --ink-faint: #8B9895;
+  --line: #DBE4E1;
+  --line-soft: #E9EFED;
+  --brand-ink: #0E2C2A;
+  --brand: #136F63;
+  --brand-dark: #0C5850;
+  --brand-light: #E3F1EE;
+  --brand-tint: #F1F8F6;
+  --amber: #A96A16;
+  --amber-bg: #FBF0DD;
+  --green: #2C7A54;
+  --green-bg: #E5F3EA;
+  --red: #B14538;
+  --red-bg: #FBEAE7;
+  --radius-soft: 12px;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}

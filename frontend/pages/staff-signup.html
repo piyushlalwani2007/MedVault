@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Signup | Hospital Discharge System</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <main class="container auth-layout">
+    <section class="panel auth-panel">
+      <p class="eyebrow">Hospital Discharge System</p>
+      <h1>Staff signup</h1>
+      <p>Your account is created immediately and can be used right after signup.</p>
+      <form id="signup-form" class="form-stack">
+        <label>Staff ID<input name="staffId" required></label>
+        <label>Name<input name="name" required></label>
+        <label>Email<input name="email" type="email" required></label>
+        <label>Department<input name="department" required></label>
+        <label>Password<input name="password" type="password" minlength="8" required></label>
+        <label>Role<select name="role" required><option value="Doctor">Doctor</option><option value="Nurse">Nurse</option></select></label>
+        <button class="btn btn-primary" type="submit">Submit signup</button>
+        <p class="form-error" data-error role="alert"></p>
+        <p data-success></p>
+      </form>
+      <p class="mt-2"><a href="login.html">Back to sign in</a></p>
+    </section>
+  </main>
+  <script src="../js/api.js"></script>
+  <script src="../js/signup.js"></script>
+  <script>document.querySelector('#signup-form').addEventListener('submit', handleSignup);</script>
+</body>
+</html>
