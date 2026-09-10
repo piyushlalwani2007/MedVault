@@ -465,6 +465,12 @@ def all_discharges():
     return jsonify(success=True, discharges=rows_dict(rows))
 
 
+@app.get('/api/index.py')
+@app.get('/api')
+def function_health():
+    return jsonify(success=True, service='Hospital Discharge System API', status='ok')
+
+
 def discharge_bundle(discharge_id):
     db = get_db()
     discharge = db.execute('SELECT * FROM discharges WHERE id = ?', (discharge_id,)).fetchone()
