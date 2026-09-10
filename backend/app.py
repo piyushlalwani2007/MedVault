@@ -32,7 +32,11 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parent
 configured_database_path = Path(os.getenv('DATABASE_PATH', 'database.sqlite'))
 DATABASE_PATH = configured_database_path if configured_database_path.is_absolute() else BASE_DIR.parent / configured_database_path
-UPLOAD_DIR = BASE_DIR / 'uploads' / 'prescriptions'
+if os.getenv('VERCEL') == '1':
+    DATABASE_PATH = Path('/tmp/hospital-discharge.sqlite')
+    UPLOAD_DIR = Path('/tmp/hospital-discharge-uploads')
+else:
+    UPLOAD_DIR = BASE_DIR / 'uploads' / 'prescriptions'
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 JWT_SECRET = os.getenv('JWT_SECRET', 'your_jwt_secret_key_change_this_in_production_123456789')
 JWT_EXPIRE = os.getenv('JWT_EXPIRE', '7d')

@@ -1,4 +1,5 @@
-const API_BASE_URL = window.HOSPITAL_API_URL || 'http://localhost:5000/api';
+const isLocalDevelopment = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE_URL = window.HOSPITAL_API_URL || (isLocalDevelopment ? 'http://localhost:5000/api' : `${window.location.origin}/api`);
 
 async function apiRequest(path, options = {}) {
 	const token = localStorage.getItem('hospital_auth_token');
