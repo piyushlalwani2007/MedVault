@@ -6,10 +6,23 @@ From the project folder:
 
 ```bash
 cd /Users/sama/newone/hospital-discharge-system
-npm install --prefix backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
 npm start
 ```
 
 Open `http://localhost:8000` in the browser. The API runs on `http://localhost:5000`.
 
 Press `Ctrl+C` once to stop both servers.
+
+## Run the Flask backend
+
+The one-terminal launcher now starts Flask and the static frontend:
+
+```bash
+cd /Users/sama/newone/hospital-discharge-system
+npm start
+```
+
+The frontend continues to use `http://localhost:5000/api`. For deployment, set the backend service root to `backend`, build command to `pip install -r requirements.txt`, and start command to `waitress-serve --host=0.0.0.0 --port=$PORT app:app`.

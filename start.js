@@ -1,10 +1,12 @@
 const { spawn } = require('child_process');
+const fs = require('fs');
 const net = require('net');
 const path = require('path');
 
 const projectRoot = __dirname;
 const backendPath = path.join(projectRoot, 'backend');
 const frontendPath = path.join(projectRoot, 'frontend');
+const pythonCommand = process.env.FLASK_PYTHON || (fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python')) ? path.join(projectRoot, '.venv', 'bin', 'python') : 'python3');
 const processes = [];
 
 function isPortInUse(port) {
@@ -53,7 +55,7 @@ process.on('SIGTERM', shutdown);
   if (await isPortInUse(5000)) {
     console.log('[backend] already running on port 5000');
   } else {
-    startProcess('backend', process.execPath, ['server.js'], backendPath);
+    startProcess('flask', pythonCommand, ['app.py'], backendPath);
   }
 
   if (await isPortInUse(8000)) {

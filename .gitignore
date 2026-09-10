@@ -1,6 +1,8 @@
 .env
 backend/.env
 node_modules/
+.venv/
+backend/.venv/
 *.log
 *.sqlite
 backend/uploads/documents/*
