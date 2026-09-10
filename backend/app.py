@@ -45,7 +45,13 @@ ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
-origins = [value.strip() for value in os.getenv('CORS_ORIGIN', 'http://localhost:8000,http://localhost:3000,https://med-vault-ddcjxwt2z-piyushlalwani085-6632s-projects.vercel.app').split(',') if value.strip()]
+configured_origins = [value.strip() for value in os.getenv('CORS_ORIGIN', '').split(',') if value.strip()]
+origins = list(dict.fromkeys(configured_origins + [
+    'http://localhost:8000',
+    'http://localhost:3000',
+    'https://med-vault-ddcjxwt2z-piyushlalwani085-6632s-projects.vercel.app',
+    'https://medvault-mfe457yce-piyushlalwani085-6632s-projects.vercel.app'
+]))
 CORS(app, origins=origins or '*', supports_credentials=True)
 
 
