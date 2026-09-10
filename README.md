@@ -31,7 +31,7 @@ The legacy Node SQLite backend uses `/tmp/hospital-discharge.sqlite` on Vercel o
 
 ## Permanent deployment setup
 
-Vercel serves the static frontend only. Deploy the Flask backend as a Render Web Service using `render.yaml`:
+Vercel serves the static frontend only. Deploy the Flask backend as a Render Web Service using `render.yaml`. The root project intentionally has no Python `requirements.txt`, so Vercel does not try to deploy Flask; Python dependencies are kept in `backend/requirements.txt` for Render:
 
 ```text
 Root directory: backend
