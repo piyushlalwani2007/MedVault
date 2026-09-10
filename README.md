@@ -28,3 +28,15 @@ npm start
 The frontend continues to use `http://localhost:5000/api`. For deployment, set the backend service root to `backend`, build command to `pip install -r requirements.txt`, and start command to `waitress-serve --host=0.0.0.0 --port=$PORT app:app`.
 
 The legacy Node SQLite backend uses `/tmp/hospital-discharge.sqlite` on Vercel only to avoid a read-only filesystem startup error. Vercel temporary storage is not persistent, so use the Flask backend with PostgreSQL for real deployed data.
+
+## Permanent deployment setup
+
+Vercel serves the static frontend only. Deploy the Flask backend as a Render Web Service using `render.yaml`:
+
+```text
+Root directory: backend
+Build command: pip install -r requirements.txt
+Start command: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+```
+
+After Render gives you a backend URL, set `window.HOSPITAL_API_URL` in `frontend/js/api.js` to that URL ending in `/api`, for example `https://your-service.onrender.com/api`, then push and redeploy the frontend on Vercel. Set the Flask `CORS_ORIGIN` environment variable to the Vercel frontend URL.
