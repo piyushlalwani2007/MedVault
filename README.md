@@ -31,12 +31,12 @@ The legacy Node SQLite backend uses `/tmp/hospital-discharge.sqlite` on Vercel o
 
 ## Permanent deployment setup
 
-Vercel serves the static frontend only. Deploy the Flask backend as a Render Web Service using `render.yaml`. The root project intentionally has no Python `requirements.txt`, so Vercel does not try to deploy Flask; Python dependencies are kept in `backend/requirements.txt` for Render:
+Vercel serves the static frontend only. Deploy the Flask backend as a Render Docker Web Service using `render.yaml`. The root project intentionally has no Python `requirements.txt`, so Vercel does not try to deploy Flask; Python dependencies are kept in `backend/requirements.txt` for Render:
 
 ```text
+Runtime: Docker
 Root directory: backend
-Build command: pip install -r requirements.txt
-Start command: waitress-serve --host=0.0.0.0 --port=$PORT app:app
+Dockerfile: backend/Dockerfile
 ```
 
 After Render gives you a backend URL, set `window.HOSPITAL_API_URL` in `frontend/js/api.js` to that URL ending in `/api`, for example `https://your-service.onrender.com/api`, then push and redeploy the frontend on Vercel. Set the Flask `CORS_ORIGIN` environment variable to the Vercel frontend URL.
