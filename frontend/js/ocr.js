@@ -25,9 +25,12 @@ async function extractPrescriptionToForm(event) {
   const form = event.currentTarget;
   const error = document.querySelector('[data-ocr-error]');
   const result = document.querySelector('[data-ocr-result]');
+  const submitBtn = form.querySelector('[type="submit"]');
+  const originalLabel = submitBtn ? submitBtn.textContent : '';
 
   if (error) error.textContent = '';
-  if (result) result.textContent = 'Extracting patient details...';
+  if (result) result.textContent = 'Running OCR extraction... This may take a moment.';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Extracting...'; }
 
   try {
     const payload = await apiRequest('/ocr/extract-preview', {
@@ -40,11 +43,13 @@ async function extractPrescriptionToForm(event) {
     }
 
     if (result) {
-      result.textContent = 'Patient details extracted. Review and edit before saving the discharge.';
+      result.textContent = 'Patient details extracted via OCR. Review and edit before saving the discharge.';
     }
   } catch (requestError) {
     if (result) result.textContent = '';
     if (error) error.textContent = requestError.message;
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalLabel; }
   }
 }
 
@@ -53,19 +58,24 @@ async function uploadPrescription(event) {
   const form = event.currentTarget;
   const error = document.querySelector('[data-ocr-error]');
   const result = document.querySelector('[data-ocr-result]');
+  const submitBtn = form.querySelector('[type="submit"]');
+  const originalLabel = submitBtn ? submitBtn.textContent : '';
   error.textContent = '';
-  result.textContent = 'Extracting prescription...';
+  result.textContent = 'Running OCR extraction... This may take a moment.';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Extracting...'; }
 
   try {
     const payload = await apiRequest('/ocr/extract', {
       method: 'POST',
       body: new FormData(form)
     });
-    result.textContent = `Extracted ${payload.prescription.parsedData.medicines.length} medicine(s). Review them below before verification.`;
+    result.textContent = `Extracted ${payload.prescription.parsedData.medicines.length} medicine(s) via OCR. Review them below before verification.`;
     renderPrescription(payload.prescription);
   } catch (requestError) {
     result.textContent = '';
     error.textContent = requestError.message;
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalLabel; }
   }
 }
 

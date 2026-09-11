@@ -20,6 +20,13 @@ from werkzeug.utils import secure_filename
 try:
     import pytesseract
     from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+    # Auto-detect tesseract binary from common locations
+    import shutil
+    if not shutil.which('tesseract'):
+        for candidate in ['/opt/anaconda3/bin/tesseract', '/usr/local/bin/tesseract', '/opt/homebrew/bin/tesseract']:
+            if Path(candidate).exists():
+                pytesseract.pytesseract.tesseract_cmd = candidate
+                break
 except ImportError:
     pytesseract = None
 
@@ -484,6 +491,20 @@ def service_health():
     return jsonify(success=True, service='Hospital Discharge System API', status='ok')
 
 
+@app.get('/api/ocr/status')
+def ocr_status():
+    info = {'tesseract': False, 'version': None, 'error': None}
+    if pytesseract is None:
+        info['error'] = 'pytesseract not installed'
+    else:
+        try:
+            info['version'] = str(pytesseract.get_tesseract_version())
+            info['tesseract'] = True
+        except Exception as exc:
+            info['error'] = str(exc)
+    return jsonify(success=True, ocr=info)
+
+
 def discharge_bundle(discharge_id):
     db = get_db()
     discharge = db.execute('SELECT * FROM discharges WHERE id = ?', (discharge_id,)).fetchone()
@@ -528,12 +549,23 @@ def run_local_ocr(file_path):
     try:
         pytesseract.get_tesseract_version()
     except Exception as exc:
-        raise RuntimeError('Tesseract OCR engine is not installed on the server. Render must install backend/apt.txt and redeploy.') from exc
+        raise RuntimeError('Tesseract OCR engine is not installed. Install it with: brew install tesseract (macOS), apt-get install tesseract-ocr (Linux), or download from https://github.com/tesseract-ocr/tesseract') from exc
+    # Use bundled eng.traineddata only when system tessdata is not available
+    config = ''
+    system_tessdata = Path('/usr/share/tesseract-ocr/5/tessdata/eng.traineddata')
+    bundled_tessdata = BASE_DIR / 'eng.traineddata'
+    if not system_tessdata.exists() and bundled_tessdata.exists():
+        os.environ.setdefault('TESSDATA_PREFIX', str(BASE_DIR))
+        config = f'--tessdata-dir {BASE_DIR}'
     image = Image.open(file_path)
+    # Resize large images to prevent timeouts and OOM on hosted platforms
+    max_dimension = 3000
+    if max(image.size) > max_dimension:
+        image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
     image = ImageOps.grayscale(image)
     image = ImageEnhance.Contrast(image).enhance(1.5)
     image = image.filter(ImageFilter.SHARPEN)
-    return pytesseract.image_to_string(image)
+    return pytesseract.image_to_string(image, config=config)
 
 
 def run_google_vision(file_path):
