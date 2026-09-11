@@ -183,10 +183,10 @@
     <!-- Header Banner -->
     <div class="notif-header-banner">
       <div>
-        <h1>🔔 Patient Test & Follow-up Reminders</h1>
-        <p>Automated reminders scheduled for post-discharge diagnostic investigations and clinic visits.</p>
+        <h1>📲 Patient SMS Alerts & Reminders</h1>
+        <p>Automated SMS alerts sent directly to registered patient mobile phones for scheduled investigations and follow-ups.</p>
       </div>
-      <button class="btn" onclick="openNewReminderModal()" style="background:#fff;color:#0c5850;font-weight:700;border-radius:10px;padding:10px 18px;font-size:13px;border:none;cursor:pointer;">+ Add Reminder</button>
+      <button class="btn" onclick="openNewReminderModal()" style="background:#fff;color:#0c5850;font-weight:700;border-radius:10px;padding:10px 18px;font-size:13px;border:none;cursor:pointer;">+ Add SMS Reminder</button>
     </div>
 
     <!-- Filter chips -->
@@ -207,11 +207,12 @@
   <div class="schedule-modal" id="add-modal">
     <div class="modal-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h2 style="font-size:18px;margin:0;">Schedule Patient Reminder</h2>
+        <h2 style="font-size:18px;margin:0;">Schedule Patient SMS Alert</h2>
         <button onclick="closeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
       </div>
       <form id="reminder-form" onsubmit="addCustomReminder(event)" class="form-stack">
         <label>Patient Name<input name="patientName" placeholder="e.g. Suman Devi" required></label>
+        <label>Patient Mobile Number<input name="patientPhone" type="tel" placeholder="e.g. +91 98765 43210" required></label>
         <label>Test / Procedure<input name="testName" placeholder="e.g. CT Scan (Abdomen)" required></label>
         <label>Scheduled Date & Time<input name="testDateTime" type="datetime-local" required></label>
         <label>Department / Location<input name="department" placeholder="e.g. Radiology Wing B" required></label>
@@ -224,7 +225,7 @@
         </label>
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
           <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Reminder</button>
+          <button type="submit" class="btn btn-primary">Schedule SMS Alert</button>
         </div>
       </form>
     </div>

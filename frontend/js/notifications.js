@@ -1,9 +1,10 @@
-// Default medical reminders (dummy data tailored for hospital workflow)
+// Default medical reminders (dummy data tailored for SMS alert workflow)
 const DEFAULT_REMINDERS = [
 	{
 		id: 'rem-1',
 		patientName: 'Suman Devi',
 		mrn: 'MRN-84920',
+		phone: '+91 98102 34567',
 		testName: 'Contrast Enhanced CT Scan (Abdomen & Pelvis)',
 		category: 'scans',
 		categoryLabel: 'CT Scan',
@@ -12,14 +13,15 @@ const DEFAULT_REMINDERS = [
 		scheduledDate: '28 November 2026',
 		scheduledTime: '10:30 AM',
 		department: 'Radiology Dept, Basement Wing B',
-		message: 'Suman will be notified for CT scan on 28 November. Fasting required 4 hours prior to scan.',
+		message: 'Suman will be notified for CT scan on 28 November via SMS alert. Fasting required 4 hours prior to scan.',
 		status: 'Pending',
-		channel: 'SMS & WhatsApp alert scheduled'
+		channel: 'SMS Alert Scheduled'
 	},
 	{
 		id: 'rem-2',
 		patientName: 'Rahul Verma',
 		mrn: 'MRN-73911',
+		phone: '+91 98711 55420',
 		testName: 'Fasting Blood Sugar, Lipid Profile & HbA1c Test',
 		category: 'lab',
 		categoryLabel: 'Pathology Lab',
@@ -28,14 +30,15 @@ const DEFAULT_REMINDERS = [
 		scheduledDate: '15 October 2026',
 		scheduledTime: '08:00 AM',
 		department: 'Central Clinical Pathology Lab, Ground Floor',
-		message: 'Rahul Verma will be notified for Blood Sugar & HbA1c check on 15 October.',
+		message: 'Rahul Verma will be notified for Blood Sugar & HbA1c check on 15 October via SMS alert.',
 		status: 'Pending',
-		channel: 'SMS reminder queued'
+		channel: 'SMS Alert Scheduled'
 	},
 	{
 		id: 'rem-3',
 		patientName: 'Pooja Sharma',
 		mrn: 'MRN-62844',
+		phone: '+91 98200 44911',
 		testName: 'Post-Operative Wound Dressing & Suture Removal',
 		category: 'opd',
 		categoryLabel: 'Surgical Follow-up',
@@ -44,14 +47,15 @@ const DEFAULT_REMINDERS = [
 		scheduledDate: '22 October 2026',
 		scheduledTime: '11:15 AM',
 		department: 'General Surgery OPD, Room 14',
-		message: 'Pooja Sharma will be notified for post-operative surgical dressing on 22 October.',
+		message: 'Pooja Sharma will be notified for post-operative surgical dressing on 22 October via SMS alert.',
 		status: 'Pending',
-		channel: 'Automated Phone Call & WhatsApp'
+		channel: 'SMS Alert Scheduled'
 	},
 	{
 		id: 'rem-4',
 		patientName: 'Anil Kapoor',
 		mrn: 'MRN-91823',
+		phone: '+91 98990 12834',
 		testName: '2D Echocardiography (Echo) & Resting ECG',
 		category: 'scans',
 		categoryLabel: 'Cardiology Scan',
@@ -60,14 +64,15 @@ const DEFAULT_REMINDERS = [
 		scheduledDate: '05 November 2026',
 		scheduledTime: '02:00 PM',
 		department: 'Cardiology Investigations Wing, 2nd Floor',
-		message: 'Anil Kapoor will be notified for 2D Echo on 05 November.',
+		message: 'Anil Kapoor will be notified for 2D Echo on 05 November via SMS alert.',
 		status: 'Pending',
-		channel: 'WhatsApp Alert Active'
+		channel: 'SMS Alert Scheduled'
 	},
 	{
 		id: 'rem-5',
 		patientName: 'Sunita Devi',
 		mrn: 'MRN-55210',
+		phone: '+91 97180 66231',
 		testName: 'Ultrasound Whole Abdomen & KUB',
 		category: 'scans',
 		categoryLabel: 'Ultrasound',
@@ -76,9 +81,10 @@ const DEFAULT_REMINDERS = [
 		scheduledDate: '12 November 2026',
 		scheduledTime: '09:00 AM',
 		department: 'Ultrasonography Suite 3',
-		message: 'Sunita Devi will be notified for Ultrasound Whole Abdomen on 12 November.',
+		message: 'Sunita Devi was notified for Ultrasound Whole Abdomen on 12 November via SMS alert.',
 		status: 'Notified',
-		channel: 'SMS delivered'
+		channel: 'SMS Alert Delivered to Mobile',
+		sentAt: '09:15 AM'
 	}
 ];
 
@@ -86,21 +92,20 @@ let activeFilter = 'all';
 
 function getStoredReminders() {
 	try {
-		const raw = localStorage.getItem('hospital_reminders_data');
+		const raw = localStorage.getItem('hospital_reminders_data_v2');
 		if (raw) return JSON.parse(raw);
 	} catch (e) {}
-	localStorage.setItem('hospital_reminders_data', JSON.stringify(DEFAULT_REMINDERS));
+	localStorage.setItem('hospital_reminders_data_v2', JSON.stringify(DEFAULT_REMINDERS));
 	return DEFAULT_REMINDERS;
 }
 
 function saveReminders(items) {
-	localStorage.setItem('hospital_reminders_data', JSON.stringify(items));
+	localStorage.setItem('hospital_reminders_data_v2', JSON.stringify(items));
 }
 
 async function loadNotifications() {
 	if (!requireAuthentication()) return;
 
-	// Also try fetching from API if backend has pending notifications
 	let apiItems = [];
 	try {
 		const payload = await apiRequest('/notifications/pending');
@@ -109,6 +114,7 @@ async function loadNotifications() {
 				id: n.id,
 				patientName: n.patientName || 'Patient',
 				mrn: n.mrn || 'MRN-Auto',
+				phone: n.phone || 'Registered Mobile',
 				testName: n.testName || n.title || 'Clinical Investigation',
 				category: 'lab',
 				categoryLabel: n.type || 'Investigation',
@@ -117,9 +123,9 @@ async function loadNotifications() {
 				scheduledDate: n.testDate || 'Upcoming',
 				scheduledTime: n.testTime || '',
 				department: 'Hospital Clinic',
-				message: `${n.patientName || 'Patient'} will be notified for ${n.testName || 'test'} on ${n.testDate || 'scheduled date'}.`,
+				message: `${n.patientName || 'Patient'} will be notified for ${n.testName || 'test'} on ${n.testDate || 'scheduled date'} via SMS alert.`,
 				status: 'Pending',
-				channel: 'Automated SMS'
+				channel: 'SMS Alert Scheduled'
 			}));
 		}
 	} catch (e) {
@@ -141,10 +147,15 @@ function renderRemindersList(items) {
 	const lab = items.filter(i => i.category === 'lab');
 	const opd = items.filter(i => i.category === 'opd');
 
-	document.getElementById('count-all').textContent = all.length;
-	document.getElementById('count-scans').textContent = scans.length;
-	document.getElementById('count-lab').textContent = lab.length;
-	document.getElementById('count-opd').textContent = opd.length;
+	const countAll = document.getElementById('count-all');
+	const countScans = document.getElementById('count-scans');
+	const countLab = document.getElementById('count-lab');
+	const countOpd = document.getElementById('count-opd');
+
+	if (countAll) countAll.textContent = all.length;
+	if (countScans) countScans.textContent = scans.length;
+	if (countLab) countLab.textContent = lab.length;
+	if (countOpd) countOpd.textContent = opd.length;
 
 	let filtered = all;
 	if (activeFilter !== 'all') {
@@ -157,29 +168,37 @@ function renderRemindersList(items) {
 	}
 
 	container.innerHTML = filtered.map(item => {
-		const isDone = item.status === 'Notified';
+		const isSent = item.status === 'Notified';
 		return `
-			<article class="notif-card ${isDone ? 'completed' : ''}" id="card-${item.id}">
+			<article class="notif-card ${isSent ? 'completed' : ''}" id="card-${item.id}">
 				<div class="notif-left">
 					<div class="notif-icon ${item.iconClass || 'scan'}">${item.icon || '🔔'}</div>
 					<div class="notif-body">
 						<h3>
 							${escapeHtml(item.patientName)}
 							<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:#f0f4f3;color:#51625f;">${escapeHtml(item.mrn || '')}</span>
-							<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:${isDone ? '#e5f3ea' : '#fbf0dd'};color:${isDone ? '#2c7a54' : '#a96a16'};">${item.status}</span>
+							<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:${isSent ? '#e5f3ea' : '#fbf0dd'};color:${isSent ? '#2c7a54' : '#a96a16'};">${isSent ? '✓ SMS Alert Sent' : 'Pending SMS'}</span>
 						</h3>
 						<p><strong>${escapeHtml(item.message)}</strong></p>
 						<div class="notif-meta">
 							<span>📅 <strong>${escapeHtml(item.scheduledDate)}</strong> at ${escapeHtml(item.scheduledTime)}</span>
 							<span>📍 ${escapeHtml(item.department)}</span>
-							<span>📲 ${escapeHtml(item.channel)}</span>
+							<span>📱 Mobile: <strong>${escapeHtml(item.phone || 'Registered Phone')}</strong></span>
+							<span>📲 Channel: <strong>${escapeHtml(item.channel || 'SMS Alert')}</strong></span>
+							${item.sentAt ? `<span>🕒 Delivered at ${escapeHtml(item.sentAt)}</span>` : ''}
 						</div>
 					</div>
 				</div>
 				<div class="notif-actions">
-					<button class="btn-notified ${isDone ? 'done' : ''}" onclick="toggleNotified('${item.id}')">
-						${isDone ? '✓ Alert Sent' : '🔔 Send Notification'}
-					</button>
+					${isSent ? `
+						<button class="btn-notified done" disabled style="opacity:0.85;cursor:default;background:#eef5f2;color:#2c7a54;border-color:#b8dbcd;">
+							✓ SMS Alert Sent
+						</button>
+					` : `
+						<button class="btn-notified" onclick="sendSmsAlert('${item.id}')" style="background:#0c5850;color:#fff;border:none;box-shadow:0 3px 10px rgba(12,88,80,0.25);">
+							📲 Send SMS Alert
+						</button>
+					`}
 				</div>
 			</article>
 		`;
@@ -193,11 +212,14 @@ function filterReminders(category, btn) {
 	renderRemindersList(getStoredReminders());
 }
 
-function toggleNotified(id) {
+// Once SMS alert is sent, it is irreversible (cannot be undone)
+function sendSmsAlert(id) {
 	const items = getStoredReminders();
 	const item = items.find(i => i.id === id);
-	if (item) {
-		item.status = item.status === 'Notified' ? 'Pending' : 'Notified';
+	if (item && item.status !== 'Notified') {
+		item.status = 'Notified';
+		item.channel = 'SMS Alert Delivered to Mobile';
+		item.sentAt = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 		saveReminders(items);
 		renderRemindersList(items);
 	}
@@ -219,6 +241,7 @@ function addCustomReminder(event) {
 	const fd = new FormData(form);
 
 	const patientName = fd.get('patientName').trim();
+	const patientPhone = fd.get('patientPhone').trim();
 	const testName = fd.get('testName').trim();
 	const dt = new Date(fd.get('testDateTime'));
 	const department = fd.get('department').trim();
@@ -230,6 +253,7 @@ function addCustomReminder(event) {
 	const newRem = {
 		id: 'rem-' + Date.now(),
 		patientName,
+		phone: patientPhone || 'Registered Mobile',
 		mrn: `MRN-${Math.floor(10000 + Math.random() * 90000)}`,
 		testName,
 		category: type,
@@ -239,9 +263,9 @@ function addCustomReminder(event) {
 		scheduledDate: dateStr,
 		scheduledTime: timeStr,
 		department,
-		message: `${patientName} will be notified for ${testName} on ${dateStr}.`,
+		message: `${patientName} will be notified for ${testName} on ${dateStr} via SMS alert.`,
 		status: 'Pending',
-		channel: 'SMS & WhatsApp alert scheduled'
+		channel: 'SMS Alert Scheduled'
 	};
 
 	const items = getStoredReminders();
