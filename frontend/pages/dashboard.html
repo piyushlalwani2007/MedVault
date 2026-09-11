@@ -1,3 +1,219 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Dashboard | Hospital Discharge System</title><link rel="stylesheet" href="../css/style.css"></head>
-<body onload="loadDashboard()"><header class="topbar"><strong>Hospital Discharge System</strong><nav><a href="dashboard.html">Dashboard</a><a href="create-discharge.html">New discharge</a><a href="staff-management.html">Create staff</a><a href="notifications.html">Notifications</a><button class="btn btn-small" onclick="logout()">Sign out</button></nav></header><main class="container page-layout"><div class="page-heading"><div><p class="eyebrow">Workspace</p><h1>Discharge dashboard</h1><p data-user></p></div><a class="btn btn-primary" href="create-discharge.html">Create discharge</a></div><section class="panel patient-search-panel"><div><p class="eyebrow">Patient records</p><h2>Search patient history</h2><p class="muted">Find previous problems, treatments, discharge instructions, and prescriptions by name, MRN, or phone.</p></div><form class="patient-search" onsubmit="searchPatientHistory(event)"><input name="query" type="search" placeholder="Search name, MRN, or phone" aria-label="Search patient name, MRN, or phone" required><button class="btn btn-primary" type="submit">Search records</button></form><p class="form-error" data-patient-search-error role="alert"></p><div class="patient-results" data-patient-results><p class="muted">Search for a patient to view their previous records.</p></div></section><section class="panel"><h2>Recent discharges</h2><p class="form-error" data-error role="alert"></p><div class="table-wrap"><table><thead><tr><th>ID</th><th>Patient</th><th>Status</th><th></th></tr></thead><tbody data-discharges></tbody></table></div></section></main><script src="../js/api.js"></script><script src="../js/auth.js"></script><script src="../js/app.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | MedVault</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(15,42,36,0.07);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 4px 18px rgba(9,26,23,0.06);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(9,26,23,0.10); }
+    .stat-card .stat-icon {
+      font-size: 22px;
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 6px;
+    }
+    .stat-card .stat-value { font-size: 26px; font-weight: 700; color: var(--ink); font-family: var(--font-display); }
+    .stat-card .stat-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    .stat-card.green .stat-icon { background: #e5f3ea; }
+    .stat-card.amber .stat-icon { background: #fbf0dd; }
+    .stat-card.blue  .stat-icon { background: #e8f0fe; }
+    .stat-card.red   .stat-icon { background: #fbeae7; }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #0c5850 0%, #136f63 60%, #1a8f80 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 12px 40px rgba(12,88,80,0.28);
+      overflow: hidden;
+      position: relative;
+    }
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      right: -60px; top: -80px;
+      width: 240px; height: 240px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .welcome-banner::after {
+      content: '';
+      position: absolute;
+      right: 80px; bottom: -100px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+    }
+    .welcome-text h1 { font-size: 24px; font-family: var(--font-display); font-weight: 600; margin: 0 0 4px 0; color: #fff; }
+    .welcome-text p { margin: 0; font-size: 14px; opacity: 0.82; color: #c8e8e4; }
+    .welcome-actions { display: flex; gap: 10px; flex-shrink: 0; position: relative; z-index: 1; }
+    .btn-white { background: #fff; color: #0c5850; font-weight: 700; border-radius: 12px; padding: 11px 20px; font-size: 14px; transition: all 0.2s; cursor: pointer; border: none; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+    .btn-white:hover { background: #f0faf9; transform: translateY(-1px); }
+    .btn-outline-white { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; border-radius: 12px; padding: 11px 20px; font-size: 14px; transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); white-space: nowrap; }
+    .btn-outline-white:hover { background: rgba(255,255,255,0.25); }
+
+    .discharge-table { border-radius: 14px; overflow: hidden; }
+    .discharge-table table { margin-top: 0; }
+    .discharge-table thead th { background: var(--brand-tint, #f1f8f6); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand-dark); padding: 12px 16px; border-bottom: 2px solid var(--line-soft); }
+    .discharge-table tbody td { padding: 14px 16px; font-size: 14px; vertical-align: middle; }
+    .discharge-table tbody tr:hover td { background: #f8fdfb; }
+    .discharge-table tbody tr:last-child td { border-bottom: none; }
+    .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .status-badge.draft   { background: #fbf0dd; color: #a96a16; }
+    .status-badge.approved { background: #e5f3ea; color: #2c7a54; }
+    .status-badge.cancelled { background: #fbeae7; color: #b14538; }
+    .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .action-btns { display: flex; gap: 6px; }
+    .action-btns a { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; transition: all 0.15s; text-decoration: none; }
+    .action-btn-review { background: var(--brand-tint); color: var(--brand-dark); }
+    .action-btn-review:hover { background: var(--brand-light); }
+    .action-btn-print  { background: #f4f8f6; color: #51625f; border: 1px solid var(--line); }
+    .action-btn-print:hover  { background: #e8f0ed; }
+
+    .search-row { display: flex; gap: 12px; }
+    .search-row input { flex: 1; min-width: 0; padding: 12px 16px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; font-size: 14px; background: #fff; transition: border-color 0.15s; }
+    .search-row input:focus { outline: none; border-color: var(--brand); }
+    .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .welcome-banner { flex-direction: column; align-items: flex-start; }
+      .welcome-actions { flex-wrap: wrap; }
+    }
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body onload="loadDashboard()">
+  <header class="topbar">
+    <strong style="font-family:var(--font-display);font-size:18px;color:var(--brand-dark);">🏥 MedVault</strong>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="create-discharge.html">New discharge</a>
+      <a href="notifications.html">Notifications</a>
+      <button class="btn btn-small btn-danger" onclick="logout()" style="border-radius:8px;">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="container page-layout">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h1>Welcome back, <span data-user-name>Doctor</span> 👋</h1>
+        <p data-user-sub>Hospital Discharge System · <span id="today-date"></span></p>
+      </div>
+      <div class="welcome-actions">
+        <a href="create-discharge.html" class="btn-white">+ New discharge</a>
+        <a href="notifications.html" class="btn-outline-white">🔔 Notifications</a>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" data-stat-approved>--</div>
+        <div class="stat-label">Approved</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value" data-stat-draft>--</div>
+        <div class="stat-label">Draft</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">🚫</div>
+        <div class="stat-value" data-stat-cancelled>--</div>
+        <div class="stat-label">Cancelled</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" data-stat-total>--</div>
+        <div class="stat-label">Total records</div>
+      </div>
+    </div>
+
+    <!-- Patient Search -->
+    <section class="panel" style="margin-bottom:20px;">
+      <div class="section-header-row">
+        <div>
+          <p class="eyebrow">Patient records</p>
+          <h2 style="margin-top:2px;">Search patient history</h2>
+          <p class="muted" style="margin-top:4px;font-size:13px;">Find previous treatments, discharge instructions and prescriptions by name, MRN or phone.</p>
+        </div>
+      </div>
+      <form class="search-row" onsubmit="searchPatientHistory(event)">
+        <input name="query" type="search" placeholder="🔍  Search name, MRN, or phone…" aria-label="Search patient" required>
+        <button class="btn btn-primary" type="submit" style="border-radius:10px;">Search</button>
+      </form>
+      <p class="form-error" data-patient-search-error role="alert" style="margin-top:8px;"></p>
+      <div class="patient-results" data-patient-results style="margin-top:12px;">
+        <p class="muted" style="font-size:14px;">Search for a patient to view their previous records.</p>
+      </div>
+    </section>
+
+    <!-- Recent Discharges Table -->
+    <section class="panel">
+      <div class="section-header-row">
+        <div>
+          <p class="eyebrow">Records</p>
+          <h2 style="margin-top:2px;">Recent discharges</h2>
+        </div>
+        <a href="create-discharge.html" class="btn btn-primary" style="font-size:13px;">+ New discharge</a>
+      </div>
+      <p class="form-error" data-error role="alert"></p>
+      <div class="table-wrap discharge-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Discharge ID</th>
+              <th>Patient name</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody data-discharges>
+            <tr><td colspan="4" class="muted" style="text-align:center;padding:24px;">Loading records…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    // Set today's date in welcome banner
+    document.getElementById('today-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  </script>
+</body>
+</html>

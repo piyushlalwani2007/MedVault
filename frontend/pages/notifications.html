@@ -1,3 +1,237 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Notifications</title><link rel="stylesheet" href="../css/style.css"></head>
-<body onload="loadNotifications()"><header class="topbar"><strong>Hospital Discharge System</strong><nav><a href="dashboard.html">Dashboard</a><a href="create-discharge.html">New discharge</a></nav></header><main class="container page-layout"><div class="page-heading"><div><p class="eyebrow">In-app only</p><h1>Notifications</h1></div></div><section data-notifications class="stack"></section></main><script src="../js/api.js"></script><script src="../js/auth.js"></script><script src="../js/notifications.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Reminders & Notifications | MedVault</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .notif-header-banner {
+      background: linear-gradient(135deg, #0c5850 0%, #136f63 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 26px 30px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(12,88,80,0.22);
+    }
+    .notif-header-banner h1 { font-size: 24px; margin: 0 0 4px 0; font-family: var(--font-display); color: #fff; }
+    .notif-header-banner p { margin: 0; color: #c8e8e4; font-size: 14px; }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      transition: all 0.2s;
+    }
+    .filter-chip:hover { border-color: var(--brand); color: var(--brand); }
+    .filter-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: 0 4px 12px rgba(19,111,99,0.25); }
+
+    .notif-list {
+      display: grid;
+      gap: 14px;
+    }
+    .notif-card {
+      background: #ffffff;
+      border: 1px solid rgba(15,42,36,0.08);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(9,26,23,0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .notif-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(9,26,23,0.08);
+      border-color: rgba(19,111,99,0.2);
+    }
+    .notif-card.completed {
+      opacity: 0.7;
+      background: #fbfdfc;
+    }
+    .notif-left {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      flex: 1;
+    }
+    .notif-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .notif-icon.scan { background: #e8f0fe; }
+    .notif-icon.lab  { background: #fbf0dd; }
+    .notif-icon.opd  { background: #e5f3ea; }
+    .notif-icon.echo { background: #fbeae7; }
+
+    .notif-body h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .notif-body p {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #334340;
+      line-height: 1.4;
+    }
+    .notif-meta {
+      display: flex;
+      gap: 14px;
+      font-size: 12px;
+      color: var(--ink-faint);
+      font-weight: 500;
+      flex-wrap: wrap;
+    }
+    .notif-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .notif-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-notified {
+      background: #e5f3ea;
+      color: #2c7a54;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      border: 1px solid #c2e3ce;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-notified:hover { background: #2c7a54; color: #fff; }
+    .btn-notified.done {
+      background: #f4f8f6;
+      color: #718380;
+      border-color: #dbe4e1;
+      cursor: default;
+    }
+
+    .schedule-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    @media (max-width: 640px) {
+      .notif-card { flex-direction: column; align-items: flex-start; }
+      .notif-actions { flex-direction: row; width: 100%; justify-content: space-between; margin-top: 10px; }
+    }
+  </style>
+</head>
+<body onload="loadNotifications()">
+  <header class="topbar">
+    <strong style="font-family:var(--font-display);font-size:18px;color:var(--brand-dark);">🏥 MedVault</strong>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="create-discharge.html">New discharge</a>
+      <a href="notifications.html" style="background:var(--brand-light);color:var(--brand-dark);font-weight:600;">Notifications</a>
+    </nav>
+  </header>
+
+  <main class="container page-layout">
+    <!-- Header Banner -->
+    <div class="notif-header-banner">
+      <div>
+        <h1>🔔 Patient Test & Follow-up Reminders</h1>
+        <p>Automated reminders scheduled for post-discharge diagnostic investigations and clinic visits.</p>
+      </div>
+      <button class="btn" onclick="openNewReminderModal()" style="background:#fff;color:#0c5850;font-weight:700;border-radius:10px;padding:10px 18px;font-size:13px;border:none;cursor:pointer;">+ Add Reminder</button>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="filterReminders('all', this)">All Reminders (<span id="count-all">0</span>)</button>
+      <button class="filter-chip" onclick="filterReminders('scans', this)">Diagnostic Scans (<span id="count-scans">0</span>)</button>
+      <button class="filter-chip" onclick="filterReminders('lab', this)">Lab Investigations (<span id="count-lab">0</span>)</button>
+      <button class="filter-chip" onclick="filterReminders('opd', this)">Doctor Follow-ups (<span id="count-opd">0</span>)</button>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notif-list" id="notifications-container">
+      <p class="muted" style="text-align:center;padding:30px;">Loading reminders...</p>
+    </div>
+  </main>
+
+  <!-- Add Reminder Modal -->
+  <div class="schedule-modal" id="add-modal">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:18px;margin:0;">Schedule Patient Reminder</h2>
+        <button onclick="closeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">&times;</button>
+      </div>
+      <form id="reminder-form" onsubmit="addCustomReminder(event)" class="form-stack">
+        <label>Patient Name<input name="patientName" placeholder="e.g. Suman Devi" required></label>
+        <label>Test / Procedure<input name="testName" placeholder="e.g. CT Scan (Abdomen)" required></label>
+        <label>Scheduled Date & Time<input name="testDateTime" type="datetime-local" required></label>
+        <label>Department / Location<input name="department" placeholder="e.g. Radiology Wing B" required></label>
+        <label>Type
+          <select name="type">
+            <option value="scans">Imaging / CT / MRI</option>
+            <option value="lab">Pathology / Blood Test</option>
+            <option value="opd">Doctor Follow-up</option>
+          </select>
+        </label>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Reminder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/notifications.js"></script>
+</body>
+</html>

@@ -1,3 +1,87 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Login | Hospital Discharge System</title><link rel="stylesheet" href="../css/style.css"></head>
-<body><main class="container auth-layout"><section class="panel auth-panel"><p class="eyebrow">Hospital Discharge System</p><h1>Staff login</h1><p>Manage patient discharge records and approvals.</p><form id="login-form" class="form-stack"><label>Staff ID<input name="staffId" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button class="btn btn-primary" type="submit">Sign in</button><p class="form-error" data-error role="alert"></p></form><p class="mt-2"><a href="staff-signup.html">Sign up as staff</a></p></section></main><script src="../js/api.js"></script><script src="../js/auth.js"></script><script>document.querySelector('#login-form').addEventListener('submit', handleLogin);</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Sign In | MedVault</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .auth-brand-icon {
+      font-size: 28px;
+      width: 52px;
+      height: 52px;
+      background: var(--brand-light);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-brand-text h2 {
+      margin: 0;
+      font-size: 20px;
+      font-family: var(--font-display);
+      color: var(--brand-dark);
+    }
+    .auth-brand-text p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .demo-credentials {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: #f4f8f6;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+  </style>
+</head>
+<body>
+  <main class="container auth-layout">
+    <section class="panel auth-panel">
+      <div class="auth-brand">
+        <div class="auth-brand-icon">🏥</div>
+        <div class="auth-brand-text">
+          <h2>MedVault</h2>
+          <p>Hospital Discharge System</p>
+        </div>
+      </div>
+      <h1 style="font-size:24px;margin-bottom:6px;">Staff Sign In</h1>
+      <p class="muted" style="font-size:14px;margin-bottom:20px;">Secure clinical access for doctors and healthcare staff.</p>
+
+      <form id="login-form" class="form-stack">
+        <label>
+          Staff ID / Employee Code
+          <input name="staffId" placeholder="e.g. DOC101" required autocomplete="username">
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" placeholder="••••••••" required autocomplete="current-password">
+        </label>
+        <button class="btn btn-primary" type="submit" style="padding:13px;font-size:15px;margin-top:8px;">Sign In to Workspace</button>
+        <p class="form-error" data-error role="alert" style="margin-top:8px;"></p>
+      </form>
+
+      <div class="demo-credentials">
+        <strong>💡 Need an account?</strong>
+        <p style="margin:4px 0 0 0;"><a href="staff-signup.html" style="color:var(--brand);font-weight:700;">Create a new staff account &rarr;</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>document.querySelector('#login-form').addEventListener('submit', handleLogin);</script>
+</body>
+</html>

@@ -1,3 +1,153 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Create Discharge</title><link rel="stylesheet" href="../css/style.css"></head>
-<body><header class="topbar"><strong>Hospital Discharge System</strong><nav><a href="dashboard.html">Dashboard</a><a href="notifications.html">Notifications</a></nav></header><main class="container page-layout"><div class="page-heading"><div><p class="eyebrow">New record</p><h1>Create discharge</h1></div></div><section class="panel"><h2>Prescription auto-fill</h2><p>Upload a doctor prescription from storage or camera to extract patient details automatically.</p><form id="ocr-form" data-mode="autofill" class="form-stack" enctype="multipart/form-data"><label>Prescription photo<input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" capture="environment" required></label><button class="btn" type="submit">Extract patient details</button><p class="form-error" data-ocr-error role="alert"></p><p data-ocr-result></p></form></section><section class="panel"><form id="create-form" class="form-grid"><label>Patient name<input name="patientName" required></label><label>Age<input name="patientAge" type="number" min="0" max="150" required></label><label>Existing MRN<input name="patientMRN"></label><label>Disease<input name="patientDisease" required></label><label class="span-2">Test details<textarea name="testDetails" required></textarea></label><label>Admission date<input name="admissionDate" type="date"></label><label>Discharge date<input name="dischargeDate" type="date"></label><label class="span-2">Diagnosis<input name="diagnosis" required></label><label class="span-2">Treatment<textarea name="treatment"></textarea></label><label class="span-2">Discharge instructions<textarea name="dischargeInstructions"></textarea></label><div class="span-2"><button class="btn btn-primary" type="submit">Save draft</button><p class="form-error" data-error role="alert"></p></div></form></section></main><script src="../js/api.js"></script><script src="../js/auth.js"></script><script src="../js/discharge.js"></script><script src="../js/ocr.js"></script><script>document.querySelector('#create-form').addEventListener('submit', createDischarge);</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Discharge | MedVault</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .ocr-drop-box {
+      background: linear-gradient(135deg, #f8fbf9 0%, #edf5f2 100%);
+      border: 2px dashed #b8d4cb;
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .ocr-drop-box:hover {
+      border-color: var(--brand);
+      background: #f1f8f6;
+    }
+    .ocr-drop-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <strong style="font-family:var(--font-display);font-size:18px;color:var(--brand-dark);">🏥 MedVault</strong>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="create-discharge.html" style="background:var(--brand-light);color:var(--brand-dark);font-weight:600;">New discharge</a>
+      <a href="notifications.html">Notifications</a>
+    </nav>
+  </header>
+
+  <main class="container page-layout">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Clinical Record</p>
+        <h1>Create Patient Discharge</h1>
+        <p class="muted">Fill in patient admission and clinical discharge details, or auto-fill via prescription OCR.</p>
+      </div>
+    </div>
+
+    <!-- OCR Auto-fill Panel -->
+    <section class="panel" style="margin-bottom:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <span class="eyebrow">Smart Auto-fill</span>
+          <h2 style="margin:2px 0 0 0;font-size:18px;">Prescription OCR Scanner</h2>
+        </div>
+        <span style="font-size:12px;background:#e5f3ea;color:#2c7a54;font-weight:700;padding:4px 10px;border-radius:12px;">⚡ AI Powered</span>
+      </div>
+      <p class="muted" style="font-size:13px;margin-bottom:16px;">Upload a doctor's handwritten or printed prescription image. Tesseract OCR will automatically extract the patient name, age, MRN, and diagnosis.</p>
+      
+      <form id="ocr-form" data-mode="autofill" class="form-stack" enctype="multipart/form-data">
+        <div class="ocr-drop-box">
+          <div class="ocr-drop-icon">📷</div>
+          <label style="cursor:pointer;font-weight:700;color:var(--brand-dark);">
+            Choose prescription image or take a photo
+            <input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" capture="environment" required style="margin-top:8px;">
+          </label>
+          <p class="muted" style="font-size:12px;margin-top:6px;">Supported: JPG, PNG, WEBP up to 50MB</p>
+        </div>
+        <button class="btn btn-primary" type="submit" style="padding:12px;font-size:14px;border-radius:10px;">⚡ Scan & Auto-fill Form Fields</button>
+        <p class="form-error" data-ocr-error role="alert" style="margin-top:6px;"></p>
+        <p data-ocr-result style="font-size:13px;color:#2c7a54;font-weight:600;"></p>
+      </form>
+    </section>
+
+    <!-- Main Discharge Form Panel -->
+    <section class="panel">
+      <div style="margin-bottom:18px;">
+        <span class="eyebrow">Discharge Form</span>
+        <h2 style="margin:2px 0 0 0;font-size:20px;">Patient & Treatment Details</h2>
+      </div>
+
+      <form id="create-form" class="form-grid">
+        <label>
+          Patient full name *
+          <input name="patientName" placeholder="e.g. Suman Devi" required>
+        </label>
+        <label>
+          Patient age *
+          <input name="patientAge" type="number" min="0" max="150" placeholder="e.g. 45" required>
+        </label>
+        <label>
+          Medical Record Number (MRN)
+          <input name="patientMRN" placeholder="e.g. MRN-84920 (Auto-generated if empty)">
+        </label>
+        <label>
+          Primary disease / Condition *
+          <input name="patientDisease" placeholder="e.g. Acute Gastroenteritis" required>
+        </label>
+        <label>
+          Gender
+          <select name="patientGender" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;">
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>
+          Blood group
+          <input name="bloodGroup" placeholder="e.g. B+">
+        </label>
+        <label class="span-2">
+          Diagnostic test & lab investigations details *
+          <textarea name="testDetails" placeholder="e.g. Complete Blood Count: Normal; Ultrasound Whole Abdomen: Mild inflammation in bowel loops..." required></textarea>
+        </label>
+        <label>
+          Admission date
+          <input name="admissionDate" type="date">
+        </label>
+        <label>
+          Discharge date
+          <input name="dischargeDate" type="date">
+        </label>
+        <label class="span-2">
+          Final clinical diagnosis *
+          <input name="diagnosis" placeholder="e.g. Infectious Acute Gastroenteritis with Moderate Dehydration" required>
+        </label>
+        <label class="span-2">
+          Treatment plan & in-hospital course
+          <textarea name="treatment" placeholder="e.g. IV Fluids (Ringer Lactate), IV Antibiotic therapy (Ceftriaxone 1g BD), Oral rehydration..."></textarea>
+        </label>
+        <label class="span-2">
+          Discharge instructions & care advice
+          <textarea name="dischargeInstructions" placeholder="e.g. Light bland diet for 5 days, avoid oily spicy foods. Follow up in OPD after 1 week."></textarea>
+        </label>
+        <div class="span-2" style="margin-top:8px;">
+          <button class="btn btn-primary" type="submit" style="padding:13px 24px;font-size:15px;border-radius:10px;">💾 Save Draft & Proceed to Review</button>
+          <p class="form-error" data-error role="alert" style="margin-top:8px;"></p>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/discharge.js"></script>
+  <script src="../js/ocr.js"></script>
+  <script>
+    document.querySelector('#create-form').addEventListener('submit', createDischarge);
+    // Default today's date
+    const today = new Date().toISOString().split('T')[0];
+    const disDateInput = document.querySelector('[name="dischargeDate"]');
+    if (disDateInput && !disDateInput.value) disDateInput.value = today;
+  </script>
+</body>
+</html>

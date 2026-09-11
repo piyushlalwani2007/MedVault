@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Print Discharge Summary | Hospital Discharge System</title>
+  <title>Print Discharge Summary | MedVault</title>
   <link rel="stylesheet" href="../css/style.css">
+  <!-- html2pdf for direct client-side PDF downloads -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    /* Screen layout helpers */
     .print-toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
       margin-bottom: 24px;
-      padding: 14px 20px;
+      padding: 16px 24px;
       background: #ffffff;
       border: 1px solid var(--line, #dbe4e1);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
     }
     .toolbar-actions {
       display: flex;
@@ -28,10 +29,10 @@
     .status-pill {
       display: inline-flex;
       align-items: center;
-      padding: 4px 12px;
+      padding: 5px 14px;
       border-radius: 20px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .status-pill.approved { background: #e5f3ea; color: #2c7a54; }
     .status-pill.draft { background: #fbf0dd; color: #a96a16; }
@@ -41,11 +42,12 @@
     .discharge-sheet {
       background: #ffffff;
       color: #12201d;
-      border: 1px solid #c9d5d1;
+      border: 1.5px solid #c9d5d1;
       border-radius: 12px;
-      padding: 40px 48px;
-      margin-bottom: 40px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      padding: 44px 50px;
+      margin: 0 auto 40px auto;
+      max-width: 900px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.06);
       font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
       line-height: 1.5;
     }
@@ -109,34 +111,31 @@
     }
 
     .doc-section {
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
     .section-header {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: #0c5850;
       border-bottom: 1px solid #dbe4e1;
-      padding-bottom: 5px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
     }
     .section-content {
       font-size: 14px;
       color: #243532;
       white-space: pre-wrap;
-      padding-left: 2px;
+      line-height: 1.6;
     }
 
     .meds-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 8px;
+      margin-top: 6px;
       font-size: 13px;
     }
     .meds-table th {
@@ -162,21 +161,21 @@
       align-items: flex-end;
       border-top: 2px solid #dbe4e1;
       padding-top: 20px;
-      margin-top: 30px;
+      margin-top: 28px;
       page-break-inside: avoid;
       break-inside: avoid;
     }
     .sign-block {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       font-size: 13px;
       color: #51625f;
       min-width: 240px;
     }
     .sign-line {
       border-bottom: 1px dashed #718380;
-      height: 44px;
+      height: 40px;
       margin-bottom: 4px;
     }
     .qr-block {
@@ -224,11 +223,18 @@
     @media print {
       @page {
         size: A4 portrait;
-        margin: 14mm 16mm;
+        margin: 10mm 14mm;
       }
-      body {
+      *, *::before, *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      html, body {
         background: #ffffff !important;
         color: #000000 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
         padding: 0 !important;
         margin: 0 !important;
       }
@@ -237,33 +243,40 @@
       .no-print,
       nav,
       button,
-      .select-discharge-card {
+      .select-discharge-card,
+      #data-message-box {
         display: none !important;
       }
-      .page-layout {
-        padding: 0 !important;
-        max-width: 100% !important;
-      }
-      .container {
-        padding: 0 !important;
-        max-width: 100% !important;
-      }
-      .discharge-sheet {
-        border: none !important;
+      .page-layout, .container {
         padding: 0 !important;
         margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      #discharge-paper,
+      .discharge-sheet {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        border: 1.5px solid #000 !important;
+        padding: 20px 24px !important;
+        margin: 0 auto !important;
         box-shadow: none !important;
         border-radius: 0 !important;
-        color: #000 !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       .meta-grid {
         background: #f8faf9 !important;
-        border: 1px solid #bbb !important;
+        border: 1px solid #999 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .meds-table th {
         background: #eef2f0 !important;
+        color: #000 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -275,7 +288,7 @@
       }
       .section-header {
         color: #000 !important;
-        border-bottom: 1px solid #666 !important;
+        border-bottom: 1px solid #444 !important;
       }
       .doc-section, .verification-footer {
         break-inside: avoid !important;
@@ -286,7 +299,7 @@
 </head>
 <body>
   <header class="topbar no-print">
-    <strong>Hospital Discharge System</strong>
+    <strong style="font-family:var(--font-display);font-size:18px;color:var(--brand-dark);">🏥 MedVault</strong>
     <nav>
       <a href="dashboard.html">Dashboard</a>
       <a href="create-discharge.html">New discharge</a>
@@ -298,13 +311,14 @@
     <!-- Toolbar on screen (hidden on print) -->
     <div class="print-toolbar no-print">
       <div>
-        <span class="eyebrow" style="display:block;margin-bottom:2px;">Medical Record</span>
-        <h2 style="font-size:18px;margin:0;" data-toolbar-title>Discharge Document</h2>
+        <span class="eyebrow" style="display:block;margin-bottom:2px;">Discharge Summary</span>
+        <h2 style="font-size:18px;margin:0;" data-toolbar-title>Loading document...</h2>
       </div>
       <div class="toolbar-actions">
         <span class="status-pill" data-status-pill style="display:none;"></span>
         <button class="btn btn-secondary" onclick="history.back()" type="button">← Back</button>
-        <button class="btn btn-primary" onclick="window.print()" type="button">🖨️ Print Document</button>
+        <button class="btn btn-primary" data-download-pdf-btn onclick="downloadPDF()" type="button" style="background:#0c5850;">📥 Download PDF</button>
+        <button class="btn btn-secondary" onclick="triggerPrint()" type="button">🖨️ Print Document</button>
       </div>
     </div>
 
@@ -333,7 +347,7 @@
     </div>
 
     <!-- The Printable Discharge Paper -->
-    <article class="discharge-sheet" id="discharge-paper" style="display:none;">
+    <article class="discharge-sheet" id="discharge-paper">
       <!-- Hospital Header -->
       <div class="hospital-header">
         <div class="hospital-title-block">
@@ -341,7 +355,7 @@
           <p>Official Patient Discharge Summary</p>
         </div>
         <div class="document-meta-block">
-          <div>Discharge ID: <span class="doc-id" data-field="dischargeId">--</span></div>
+          <div>Discharge ID: <span class="doc-id" data-field="dischargeId">Loading...</span></div>
           <div style="margin-top:4px;">Printed on: <span data-field="printDate">--</span></div>
           <div style="margin-top:4px;">Status: <strong data-field="statusText">--</strong></div>
         </div>
@@ -402,7 +416,7 @@
 
       <!-- Treatment Summary -->
       <section class="doc-section">
-        <div class="section-header">3. Treatment & Procedures Undertaken</div>
+        <div class="section-header">3. Treatment & In-Hospital Procedures</div>
         <div class="section-content" data-field="treatment">--</div>
       </section>
 
@@ -464,7 +478,58 @@
     function showMessage(msg, isError = false) {
       const box = document.querySelector('[data-message-box]');
       if (!box) return;
-      box.innerHTML = `<div style="padding:14px 18px;border-radius:8px;font-size:14px;background:${isError ? '#fbeae7' : '#e5f3ea'};color:${isError ? '#b14538' : '#2c7a54'};border:1px solid ${isError ? '#f5c2bc' : '#c2e3ce'};">${msg}</div>`;
+      box.innerHTML = `<div style="padding:14px 18px;border-radius:10px;font-size:14px;background:${isError ? '#fbeae7' : '#e5f3ea'};color:${isError ? '#b14538' : '#2c7a54'};border:1px solid ${isError ? '#f5c2bc' : '#c2e3ce'};">${msg}</div>`;
+    }
+
+    function triggerPrint() {
+      const paper = document.getElementById('discharge-paper');
+      if (paper) paper.style.display = 'block';
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('discharge-paper');
+      if (!element) return;
+      element.style.display = 'block';
+
+      const docId = document.querySelector('[data-field="dischargeId"]').textContent || 'Discharge';
+      const patientName = document.querySelector('[data-field="patientName"]').textContent || 'Patient';
+      const cleanName = patientName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Discharge_${docId}_${cleanName}.pdf`;
+
+      const btn = document.querySelector('[data-download-pdf-btn]');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Generating PDF...';
+      }
+
+      const opt = {
+        margin: [10, 12, 10, 12],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(element).save().then(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📥 Download PDF';
+          }
+        }).catch(err => {
+          console.error('html2pdf error:', err);
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📥 Download PDF';
+          }
+          window.print();
+        });
+      } else {
+        window.print();
+      }
     }
 
     async function loadDischargeSelector() {
@@ -584,9 +649,6 @@
         renderMedications(prescriptions);
 
         // QR Code resolution:
-        // 1. First check if QR is already on the discharge record
-        // 2. Check sessionStorage
-        // 3. If approved, safely try fetching from API
         let qrCodeUrl = discharge.qrCode || sessionStorage.getItem(`qr-${id}`);
         if (!qrCodeUrl) {
           try {

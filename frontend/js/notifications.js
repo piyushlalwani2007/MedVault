@@ -1,11 +1,263 @@
-async function loadNotifications() {
-	if (!requireAuthentication()) return;
-	const payload = await apiRequest('/notifications/pending');
-	const list = document.querySelector('[data-notifications]');
-	list.innerHTML = payload.notifications.map(notification => `<article class="panel"><h2>${notification.title || notification.type}</h2><p>${notification.testName || ''}</p><p>${notification.testDate || ''} ${notification.testTime || ''}</p><button class="btn btn-small" onclick="markNotificationRead('${notification.id}')">Mark as read</button></article>`).join('') || '<p>No pending notifications.</p>';
+// Default medical reminders (dummy data tailored for hospital workflow)
+const DEFAULT_REMINDERS = [
+	{
+		id: 'rem-1',
+		patientName: 'Suman Devi',
+		mrn: 'MRN-84920',
+		testName: 'Contrast Enhanced CT Scan (Abdomen & Pelvis)',
+		category: 'scans',
+		categoryLabel: 'CT Scan',
+		icon: '🩻',
+		iconClass: 'scan',
+		scheduledDate: '28 November 2026',
+		scheduledTime: '10:30 AM',
+		department: 'Radiology Dept, Basement Wing B',
+		message: 'Suman will be notified for CT scan on 28 November. Fasting required 4 hours prior to scan.',
+		status: 'Pending',
+		channel: 'SMS & WhatsApp alert scheduled'
+	},
+	{
+		id: 'rem-2',
+		patientName: 'Rahul Verma',
+		mrn: 'MRN-73911',
+		testName: 'Fasting Blood Sugar, Lipid Profile & HbA1c Test',
+		category: 'lab',
+		categoryLabel: 'Pathology Lab',
+		icon: '🩸',
+		iconClass: 'lab',
+		scheduledDate: '15 October 2026',
+		scheduledTime: '08:00 AM',
+		department: 'Central Clinical Pathology Lab, Ground Floor',
+		message: 'Rahul Verma will be notified for Blood Sugar & HbA1c check on 15 October.',
+		status: 'Pending',
+		channel: 'SMS reminder queued'
+	},
+	{
+		id: 'rem-3',
+		patientName: 'Pooja Sharma',
+		mrn: 'MRN-62844',
+		testName: 'Post-Operative Wound Dressing & Suture Removal',
+		category: 'opd',
+		categoryLabel: 'Surgical Follow-up',
+		icon: '🩹',
+		iconClass: 'opd',
+		scheduledDate: '22 October 2026',
+		scheduledTime: '11:15 AM',
+		department: 'General Surgery OPD, Room 14',
+		message: 'Pooja Sharma will be notified for post-operative surgical dressing on 22 October.',
+		status: 'Pending',
+		channel: 'Automated Phone Call & WhatsApp'
+	},
+	{
+		id: 'rem-4',
+		patientName: 'Anil Kapoor',
+		mrn: 'MRN-91823',
+		testName: '2D Echocardiography (Echo) & Resting ECG',
+		category: 'scans',
+		categoryLabel: 'Cardiology Scan',
+		icon: '❤️',
+		iconClass: 'echo',
+		scheduledDate: '05 November 2026',
+		scheduledTime: '02:00 PM',
+		department: 'Cardiology Investigations Wing, 2nd Floor',
+		message: 'Anil Kapoor will be notified for 2D Echo on 05 November.',
+		status: 'Pending',
+		channel: 'WhatsApp Alert Active'
+	},
+	{
+		id: 'rem-5',
+		patientName: 'Sunita Devi',
+		mrn: 'MRN-55210',
+		testName: 'Ultrasound Whole Abdomen & KUB',
+		category: 'scans',
+		categoryLabel: 'Ultrasound',
+		icon: '🩺',
+		iconClass: 'scan',
+		scheduledDate: '12 November 2026',
+		scheduledTime: '09:00 AM',
+		department: 'Ultrasonography Suite 3',
+		message: 'Sunita Devi will be notified for Ultrasound Whole Abdomen on 12 November.',
+		status: 'Notified',
+		channel: 'SMS delivered'
+	}
+];
+
+let activeFilter = 'all';
+
+function getStoredReminders() {
+	try {
+		const raw = localStorage.getItem('hospital_reminders_data');
+		if (raw) return JSON.parse(raw);
+	} catch (e) {}
+	localStorage.setItem('hospital_reminders_data', JSON.stringify(DEFAULT_REMINDERS));
+	return DEFAULT_REMINDERS;
 }
 
-async function markNotificationRead(id) {
-	await apiRequest(`/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
-	loadNotifications();
+function saveReminders(items) {
+	localStorage.setItem('hospital_reminders_data', JSON.stringify(items));
+}
+
+async function loadNotifications() {
+	if (!requireAuthentication()) return;
+
+	// Also try fetching from API if backend has pending notifications
+	let apiItems = [];
+	try {
+		const payload = await apiRequest('/notifications/pending');
+		if (payload && Array.isArray(payload.notifications)) {
+			apiItems = payload.notifications.map(n => ({
+				id: n.id,
+				patientName: n.patientName || 'Patient',
+				mrn: n.mrn || 'MRN-Auto',
+				testName: n.testName || n.title || 'Clinical Investigation',
+				category: 'lab',
+				categoryLabel: n.type || 'Investigation',
+				icon: '📋',
+				iconClass: 'lab',
+				scheduledDate: n.testDate || 'Upcoming',
+				scheduledTime: n.testTime || '',
+				department: 'Hospital Clinic',
+				message: `${n.patientName || 'Patient'} will be notified for ${n.testName || 'test'} on ${n.testDate || 'scheduled date'}.`,
+				status: 'Pending',
+				channel: 'Automated SMS'
+			}));
+		}
+	} catch (e) {
+		console.warn('API notification fallback:', e);
+	}
+
+	const stored = getStoredReminders();
+	const combined = [...apiItems, ...stored.filter(s => !apiItems.some(a => a.id === s.id))];
+	renderRemindersList(combined);
+}
+
+function renderRemindersList(items) {
+	const container = document.querySelector('#notifications-container');
+	if (!container) return;
+
+	// Update counter badges
+	const all = items;
+	const scans = items.filter(i => i.category === 'scans');
+	const lab = items.filter(i => i.category === 'lab');
+	const opd = items.filter(i => i.category === 'opd');
+
+	document.getElementById('count-all').textContent = all.length;
+	document.getElementById('count-scans').textContent = scans.length;
+	document.getElementById('count-lab').textContent = lab.length;
+	document.getElementById('count-opd').textContent = opd.length;
+
+	let filtered = all;
+	if (activeFilter !== 'all') {
+		filtered = items.filter(i => i.category === activeFilter);
+	}
+
+	if (!filtered.length) {
+		container.innerHTML = '<div class="panel" style="text-align:center;padding:40px;"><p class="muted">No reminders found in this category.</p></div>';
+		return;
+	}
+
+	container.innerHTML = filtered.map(item => {
+		const isDone = item.status === 'Notified';
+		return `
+			<article class="notif-card ${isDone ? 'completed' : ''}" id="card-${item.id}">
+				<div class="notif-left">
+					<div class="notif-icon ${item.iconClass || 'scan'}">${item.icon || '🔔'}</div>
+					<div class="notif-body">
+						<h3>
+							${escapeHtml(item.patientName)}
+							<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:#f0f4f3;color:#51625f;">${escapeHtml(item.mrn || '')}</span>
+							<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:${isDone ? '#e5f3ea' : '#fbf0dd'};color:${isDone ? '#2c7a54' : '#a96a16'};">${item.status}</span>
+						</h3>
+						<p><strong>${escapeHtml(item.message)}</strong></p>
+						<div class="notif-meta">
+							<span>📅 <strong>${escapeHtml(item.scheduledDate)}</strong> at ${escapeHtml(item.scheduledTime)}</span>
+							<span>📍 ${escapeHtml(item.department)}</span>
+							<span>📲 ${escapeHtml(item.channel)}</span>
+						</div>
+					</div>
+				</div>
+				<div class="notif-actions">
+					<button class="btn-notified ${isDone ? 'done' : ''}" onclick="toggleNotified('${item.id}')">
+						${isDone ? '✓ Alert Sent' : '🔔 Send Notification'}
+					</button>
+				</div>
+			</article>
+		`;
+	}).join('');
+}
+
+function filterReminders(category, btn) {
+	activeFilter = category;
+	document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+	if (btn) btn.classList.add('active');
+	renderRemindersList(getStoredReminders());
+}
+
+function toggleNotified(id) {
+	const items = getStoredReminders();
+	const item = items.find(i => i.id === id);
+	if (item) {
+		item.status = item.status === 'Notified' ? 'Pending' : 'Notified';
+		saveReminders(items);
+		renderRemindersList(items);
+	}
+}
+
+function openNewReminderModal() {
+	const modal = document.getElementById('add-modal');
+	if (modal) modal.style.display = 'flex';
+}
+
+function closeModal() {
+	const modal = document.getElementById('add-modal');
+	if (modal) modal.style.display = 'none';
+}
+
+function addCustomReminder(event) {
+	event.preventDefault();
+	const form = event.currentTarget;
+	const fd = new FormData(form);
+
+	const patientName = fd.get('patientName').trim();
+	const testName = fd.get('testName').trim();
+	const dt = new Date(fd.get('testDateTime'));
+	const department = fd.get('department').trim();
+	const type = fd.get('type');
+
+	const dateStr = dt.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+	const timeStr = dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+	const newRem = {
+		id: 'rem-' + Date.now(),
+		patientName,
+		mrn: `MRN-${Math.floor(10000 + Math.random() * 90000)}`,
+		testName,
+		category: type,
+		categoryLabel: type === 'scans' ? 'Diagnostic Scan' : type === 'lab' ? 'Pathology' : 'OPD Visit',
+		icon: type === 'scans' ? '🩻' : type === 'lab' ? '🩸' : '🩺',
+		iconClass: type,
+		scheduledDate: dateStr,
+		scheduledTime: timeStr,
+		department,
+		message: `${patientName} will be notified for ${testName} on ${dateStr}.`,
+		status: 'Pending',
+		channel: 'SMS & WhatsApp alert scheduled'
+	};
+
+	const items = getStoredReminders();
+	items.unshift(newRem);
+	saveReminders(items);
+	closeModal();
+	form.reset();
+	renderRemindersList(items);
+}
+
+function escapeHtml(value) {
+	return String(value ?? '').replace(/[&<>'"]/g, character => ({
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		"'": '&#39;',
+		'"': '&quot;'
+	}[character]));
 }
