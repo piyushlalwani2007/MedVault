@@ -74,7 +74,23 @@
       <p>Upload a prescription image from storage or use your camera, then review the extracted medicines before verification.</p>
       <form id="ocr-form" class="form-stack" enctype="multipart/form-data">
         <input type="hidden" name="dischargeId">
-        <label>Prescription image<input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" capture="environment" required></label>
+        <div class="ocr-upload-choice-grid">
+          <!-- Option 1: File Storage / Gallery (No capture constraint) -->
+          <label class="upload-btn-card">
+            <span class="upload-card-icon">📁</span>
+            <span class="upload-card-title">Choose from Storage / Gallery</span>
+            <span class="upload-card-desc">Browse files, downloads, or photo albums</span>
+            <input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.pdf" class="sr-only-input">
+          </label>
+
+          <!-- Option 2: Camera Capture directly -->
+          <label class="upload-btn-card">
+            <span class="upload-card-icon">📸</span>
+            <span class="upload-card-title">Take Photo with Camera</span>
+            <span class="upload-card-desc">Capture prescription using phone camera</span>
+            <input type="file" accept="image/*" capture="environment" class="sr-only-input" onchange="syncCameraToMainInput(this)">
+          </label>
+        </div>
         <button class="btn" type="submit">Extract prescription (OCR)</button>
       </form>
       <p class="form-error" data-ocr-error role="alert"></p>

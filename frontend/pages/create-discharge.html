@@ -55,14 +55,24 @@
       <p class="muted" style="font-size:13px;margin-bottom:16px;">Upload a doctor's handwritten or printed prescription image. Tesseract OCR will automatically extract the patient name, age, MRN, and diagnosis.</p>
       
       <form id="ocr-form" data-mode="autofill" class="form-stack" enctype="multipart/form-data">
-        <div class="ocr-drop-box">
-          <div class="ocr-drop-icon">📷</div>
-          <label style="cursor:pointer;font-weight:700;color:var(--brand-dark);">
-            Choose prescription image or take a photo
-            <input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" capture="environment" required style="margin-top:8px;">
+        <div class="ocr-upload-choice-grid">
+          <!-- Option 1: File Storage / Gallery (No capture constraint) -->
+          <label class="upload-btn-card">
+            <span class="upload-card-icon">📁</span>
+            <span class="upload-card-title">Choose from Storage / Gallery</span>
+            <span class="upload-card-desc">Browse files, downloads, or photo albums</span>
+            <input name="prescription" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.pdf" class="sr-only-input">
           </label>
-          <p class="muted" style="font-size:12px;margin-top:6px;">Supported: JPG, PNG, WEBP up to 50MB</p>
+
+          <!-- Option 2: Camera Capture directly -->
+          <label class="upload-btn-card">
+            <span class="upload-card-icon">📸</span>
+            <span class="upload-card-title">Take Photo with Camera</span>
+            <span class="upload-card-desc">Capture prescription using phone camera</span>
+            <input type="file" accept="image/*" capture="environment" class="sr-only-input" onchange="syncCameraToMainInput(this)">
+          </label>
         </div>
+        <p class="muted" style="font-size:12px;text-align:center;margin-top:-6px;">Supported: JPG, PNG, WEBP, PDF · Max 50MB</p>
         <button class="btn btn-primary" type="submit" style="padding:12px;font-size:14px;border-radius:10px;">⚡ Scan & Auto-fill Form Fields</button>
         <p class="form-error" data-ocr-error role="alert" style="margin-top:6px;"></p>
         <p data-ocr-result style="font-size:13px;color:#2c7a54;font-weight:600;"></p>

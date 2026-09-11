@@ -128,6 +128,24 @@ async function verifyPrescription() {
    LONG IMAGE PREVIEW & INTERACTIVE TOOLS
    ============================================================ */
 
+function syncCameraToMainInput(cameraInput) {
+  if (cameraInput.files && cameraInput.files[0]) {
+    const form = cameraInput.closest('form');
+    const mainInput = form.querySelector('input[name="prescription"]');
+    if (mainInput) {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(cameraInput.files[0]);
+        mainInput.files = dt.files;
+        mainInput.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (e) {
+        // Fallback for older browsers
+        handleFilePreviewChange({ target: cameraInput });
+      }
+    }
+  }
+}
+
 function setupPrescriptionPreviews() {
   const fileInputs = document.querySelectorAll('input[type="file"][name="prescription"]');
   fileInputs.forEach(input => {
