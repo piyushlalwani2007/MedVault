@@ -53,14 +53,12 @@ ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 configured_origins = [value.strip() for value in os.getenv('CORS_ORIGIN', '').split(',') if value.strip()]
-origins = list(dict.fromkeys(configured_origins + [
+origins = [
+    re.compile(r'^https:\/\/.*\.vercel\.app$'),
+    re.compile(r'^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$'),
     'http://localhost:8000',
-    'http://localhost:3000',
-    'https://med-vault-ddcjxwt2z-piyushlalwani085-6632s-projects.vercel.app',
-    'https://medvault-mfe457yce-piyushlalwani085-6632s-projects.vercel.app',
-    'https://medvault-ochre-five.vercel.app',
-    'https://medvault-dfix1ir46-piyushlalwani085-6632s-projects.vercel.app'
-]))
+    'http://localhost:3000'
+] + configured_origins
 CORS(app, origins=origins or '*', supports_credentials=True)
 
 
@@ -522,7 +520,16 @@ def get_discharge(discharge_id):
     if not bundle:
         return error('Discharge not found', 404)
     discharge, patient, prescriptions = bundle
-    return jsonify(success=True, discharge=row_dict(discharge), patient=row_dict(patient), prescriptions=prescriptions)
+    discharge_dict = row_dict(discharge)
+    if discharge_dict.get('status') == 'Approved' and not discharge_dict.get('qrCode'):
+        try:
+            qr = qr_data_url(build_qr_text(discharge, patient, prescriptions))
+            get_db().execute('UPDATE discharges SET qrCode = ? WHERE id = ?', (qr, discharge_id))
+            get_db().commit()
+            discharge_dict['qrCode'] = qr
+        except Exception as exc:
+            app.logger.warning(f'Auto QR generation failed: {exc}')
+    return jsonify(success=True, discharge=discharge_dict, patient=row_dict(patient), prescriptions=prescriptions)
 
 
 @app.put('/api/discharge/<discharge_id>')
@@ -722,17 +729,20 @@ def ocr_history(discharge_id):
 
 
 def build_qr_text(discharge, patient, prescriptions):
+    patient = dict(patient) if patient else {}
+    discharge = dict(discharge) if discharge else {}
+    prescriptions = prescriptions or []
     medicines = [medicine for prescription in prescriptions for medicine in prescription.get('medicines', [])]
     medicine_text = '; '.join(' '.join(str(item.get(key, '')).strip() for key in ('name', 'dosage', 'frequency', 'duration') if item.get(key)) for item in medicines) or 'None listed'
     def value(item):
         return re.sub(r'\s+', ' ', str(item or 'Not provided')).strip()
     return '\n'.join([
         HOSPITAL_NAME, 'DIGITAL DISCHARGE SUMMARY',
-        f'Discharge ID: {value(discharge["dischargeId"])}', f'Status: {value(discharge["status"])}', '',
-        f'Patient: {value(patient["name"])}', f'MRN: {value(patient["mrn"])}', f'Age: {value(patient["age"])}',
-        f'Disease: {value(patient["disease"])}', f'Tests: {value(patient["testDetails"])}',
-        f'Diagnosis: {value(discharge["diagnosis"])}', f'Treatment: {value(discharge["treatment"])}',
-        f'Discharge instructions: {value(discharge["dischargeInstructions"])}', f'Medicines: {medicine_text}'
+        f'Discharge ID: {value(discharge.get("dischargeId"))}', f'Status: {value(discharge.get("status"))}', '',
+        f'Patient: {value(patient.get("name"))}', f'MRN: {value(patient.get("mrn"))}', f'Age: {value(patient.get("age"))}',
+        f'Disease: {value(patient.get("disease"))}', f'Tests: {value(patient.get("testDetails"))}',
+        f'Diagnosis: {value(discharge.get("diagnosis"))}', f'Treatment: {value(discharge.get("treatment"))}',
+        f'Discharge instructions: {value(discharge.get("dischargeInstructions"))}', f'Medicines: {medicine_text}'
     ])
 
 
@@ -750,11 +760,16 @@ def get_qr(discharge_id):
     if not bundle:
         return error('Discharge not found', 404)
     discharge, patient, prescriptions = bundle
-    if discharge['status'] != 'Approved':
-        return error('QR code is available after approval', 409)
-    qr_code = qr_data_url(build_qr_text(discharge, patient, prescriptions))
-    get_db().execute('UPDATE discharges SET qrCode = ? WHERE id = ?', (qr_code, discharge_id))
-    get_db().commit()
+    qr_code = discharge['qrCode']
+    if not qr_code:
+        try:
+            qr_code = qr_data_url(build_qr_text(discharge, patient, prescriptions))
+            if discharge['status'] == 'Approved':
+                get_db().execute('UPDATE discharges SET qrCode = ? WHERE id = ?', (qr_code, discharge_id))
+                get_db().commit()
+        except Exception as exc:
+            app.logger.exception(exc)
+            return error(f'Could not generate QR code: {str(exc)}')
     return jsonify(success=True, qrCode=qr_code)
 
 
