@@ -1,0 +1,363 @@
+/* ============================================================
+   MEDVAULT MOBILE RESPONSIVE STYLESHEET
+   Comprehensive mobile & tablet compatibility
+   ============================================================ */
+
+/* --- Tablet and Mobile (< 900px) --- */
+@media (max-width: 900px) {
+  .container {
+    padding: 0 16px;
+    max-width: 100%;
+  }
+
+  .meta-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* --- Mobile Standard (< 768px) --- */
+@media (max-width: 768px) {
+  /* Layout & Spacing */
+  .auth-layout, .page-layout {
+    padding-top: 16px !important;
+    padding-bottom: 36px !important;
+  }
+
+  .page-heading {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .page-heading > a.btn,
+  .page-heading > button.btn {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .panel {
+    padding: 18px 16px !important;
+    border-radius: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Navigation Bar */
+  .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    padding: 10px 14px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    backdrop-filter: blur(14px) !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  .topbar nav {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+  }
+
+  .topbar nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .topbar nav a {
+    flex-shrink: 0 !important;
+    font-size: 13px !important;
+    padding: 7px 12px !important;
+    border-radius: 8px !important;
+    background: var(--surface-alt, #f5f8f6) !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  .topbar nav a:hover,
+  .topbar nav a.active {
+    background: var(--brand-light) !important;
+    color: var(--brand-dark) !important;
+  }
+
+  .topbar nav button {
+    flex-shrink: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    margin-left: auto !important;
+  }
+
+  /* Form Elements - Prevent iOS Auto-Zoom */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .span-2, .col-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Actions Bar */
+  .actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .actions .btn,
+  .actions a.btn,
+  .actions button.btn {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  /* Welcome Banner on Dashboard */
+  .welcome-banner {
+    padding: 20px 18px !important;
+    border-radius: 16px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+
+  .welcome-banner .welcome-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .welcome-banner .welcome-actions a,
+  .welcome-banner .welcome-actions button {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 12px !important;
+  }
+
+  /* Search Bar */
+  .search-row, .patient-search {
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .search-row input, .patient-search input {
+    width: 100% !important;
+  }
+
+  .search-row button, .patient-search button {
+    width: 100% !important;
+  }
+
+  /* Tables with Touch Scrolling */
+  .table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
+    margin-top: 12px !important;
+  }
+
+  .table-wrap table {
+    min-width: 580px !important;
+  }
+
+  th, td {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* Clinical Discharge Sheet (Screen Preview) */
+  .discharge-sheet {
+    padding: 20px 16px !important;
+    border-radius: 10px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .hospital-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+  }
+
+  .document-meta-block {
+    text-align: left !important;
+    width: 100% !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed var(--line) !important;
+  }
+
+  .meta-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 10px 12px !important;
+  }
+
+  .verification-footer {
+    flex-direction: column-reverse !important;
+    align-items: center !important;
+    gap: 20px !important;
+    text-align: center !important;
+  }
+
+  .sign-block {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .sign-line {
+    margin: 0 auto 6px auto !important;
+    width: 200px !important;
+  }
+
+  .print-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 16px 14px !important;
+  }
+
+  .print-toolbar .toolbar-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .print-toolbar .toolbar-actions button {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  /* Notifications Cards */
+  .notif-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 16px 14px !important;
+  }
+
+  .notif-left {
+    flex-direction: row !important;
+    gap: 12px !important;
+  }
+
+  .notif-icon {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 20px !important;
+  }
+
+  .notif-actions {
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+
+  .btn-notified {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 10px !important;
+  }
+
+  .filter-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 6px !important;
+  }
+
+  .filter-chip {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Auth Card */
+  .auth-card {
+    padding: 24px 20px !important;
+    border-radius: 18px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* OCR Editor Approved Panel */
+  [data-qr-panel] > div {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 16px !important;
+  }
+
+  [data-qr-panel] [data-print-card-btn] {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
+/* --- Small Mobile Phones (< 480px) --- */
+@media (max-width: 480px) {
+  .stats-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .stat-card {
+    padding: 14px 12px !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 22px !important;
+  }
+
+  .stat-card .stat-label {
+    font-size: 11px !important;
+  }
+
+  .meta-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .hospital-title-block h1 {
+    font-size: 20px !important;
+  }
+
+  .action-btns {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .action-btns a {
+    text-align: center !important;
+    padding: 5px 8px !important;
+  }
+
+  .btn-submit {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+  }
+}

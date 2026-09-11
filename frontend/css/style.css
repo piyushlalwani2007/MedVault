@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'variables.css';
+@import 'responsive.css';
 
 * {
   margin: 0;
@@ -68,21 +69,6 @@ code { background: #f0f3f1; padding: 2px 5px; }
 .history-list { display: grid; gap: 12px; margin-top: 16px; }
 .history-entry { background: var(--surface-alt, #f5f8f6); border-left: 3px solid var(--brand); padding: 14px 16px; border-radius: 4px; }
 .history-entry p { margin-top: 6px; }
-
-@media (max-width: 768px) {
-  .container { padding: 0 16px; }
-  .auth-layout, .page-layout { padding-top: 20px; padding-bottom: 42px; }
-  .panel { padding: 20px 16px; border-radius: 14px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .span-2 { grid-column: auto; }
-  .page-heading, .topbar, .actions { align-items: flex-start; flex-direction: column; }
-  .topbar { padding: 14px 16px; }
-  .topbar nav { width: 100%; gap: 8px; }
-  .topbar nav a { width: 100%; }
-  .btn { width: 100%; }
-  .patient-search { align-items: stretch; flex-direction: column; }
-  .patient-result-heading, .history-entry-heading { flex-direction: column; }
-}
 
 /* ============================================================
    UTILITIES
