@@ -728,26 +728,63 @@ def ocr_history(discharge_id):
     return jsonify(success=True, prescriptions=[prescription_data(row) for row in rows])
 
 
+def clip_text(text, max_chars=160):
+    val = re.sub(r'\s+', ' ', str(text or 'Not provided')).strip()
+    if len(val) > max_chars:
+        return val[:max_chars - 3] + '...'
+    return val
+
+
 def build_qr_text(discharge, patient, prescriptions):
     patient = dict(patient) if patient else {}
     discharge = dict(discharge) if discharge else {}
     prescriptions = prescriptions or []
     medicines = [medicine for prescription in prescriptions for medicine in prescription.get('medicines', [])]
-    medicine_text = '; '.join(' '.join(str(item.get(key, '')).strip() for key in ('name', 'dosage', 'frequency', 'duration') if item.get(key)) for item in medicines) or 'None listed'
-    def value(item):
-        return re.sub(r'\s+', ' ', str(item or 'Not provided')).strip()
+    med_lines = []
+    for item in medicines[:8]:
+        entry = ' '.join(str(item.get(key, '')).strip() for key in ('name', 'dosage', 'frequency') if item.get(key))
+        if entry:
+            med_lines.append(entry)
+    medicine_text = '; '.join(med_lines) or 'None listed'
+    if len(medicines) > 8:
+        medicine_text += f' (+{len(medicines) - 8} more)'
+
     return '\n'.join([
         HOSPITAL_NAME, 'DIGITAL DISCHARGE SUMMARY',
-        f'Discharge ID: {value(discharge.get("dischargeId"))}', f'Status: {value(discharge.get("status"))}', '',
-        f'Patient: {value(patient.get("name"))}', f'MRN: {value(patient.get("mrn"))}', f'Age: {value(patient.get("age"))}',
-        f'Disease: {value(patient.get("disease"))}', f'Tests: {value(patient.get("testDetails"))}',
-        f'Diagnosis: {value(discharge.get("diagnosis"))}', f'Treatment: {value(discharge.get("treatment"))}',
-        f'Discharge instructions: {value(discharge.get("dischargeInstructions"))}', f'Medicines: {medicine_text}'
+        f'Discharge ID: {clip_text(discharge.get("dischargeId"), 40)}',
+        f'Status: {clip_text(discharge.get("status"), 20)}',
+        '',
+        f'Patient: {clip_text(patient.get("name"), 60)}',
+        f'MRN: {clip_text(patient.get("mrn"), 40)}',
+        f'Age: {clip_text(patient.get("age"), 10)}',
+        f'Diagnosis: {clip_text(discharge.get("diagnosis") or patient.get("disease"), 160)}',
+        f'Tests: {clip_text(patient.get("testDetails"), 160)}',
+        f'Treatment: {clip_text(discharge.get("treatment"), 160)}',
+        f'Instructions: {clip_text(discharge.get("dischargeInstructions"), 160)}',
+        f'Medicines: {clip_text(medicine_text, 250)}'
     ])
 
 
 def qr_data_url(text):
-    image = qrcode.make(text)
+    safe_text = str(text or '')
+    if len(safe_text) > 1500:
+        safe_text = safe_text[:1497] + '...'
+
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=6,
+        border=2
+    )
+    try:
+        qr.add_data(safe_text)
+        qr.make(fit=True)
+    except Exception:
+        qr.clear()
+        qr.add_data(safe_text[:700] + '...')
+        qr.make(fit=True)
+
+    image = qr.make_image(fill_color='black', back_color='white')
     output = io.BytesIO()
     image.save(output, format='PNG')
     return 'data:image/png;base64,' + base64.b64encode(output.getvalue()).decode()
