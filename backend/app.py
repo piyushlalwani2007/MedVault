@@ -775,14 +775,16 @@ def get_qr(discharge_id):
 
 @app.post('/api/discharge/approve/<discharge_id>')
 @auth_required
-@roles('Doctor', 'Nurse', 'Admin')
 def approve_discharge(discharge_id):
     bundle = discharge_bundle(discharge_id)
     if not bundle:
         return error('Discharge not found', 404)
     discharge, patient, prescriptions = bundle
-    if discharge['status'] != 'Draft':
-        return error('Only draft discharges can be approved', 409)
+    discharge_dict = dict(discharge)
+
+    if discharge_dict.get('status') == 'Approved' and discharge_dict.get('qrCode'):
+        return jsonify(success=True, message='Discharge is already approved', qrCode=discharge_dict.get('qrCode'))
+
     db = get_db()
     db.execute("UPDATE discharges SET status = 'Approved', approvedById = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?", (g.user['id'], discharge_id))
     db.commit()

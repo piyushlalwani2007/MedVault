@@ -154,9 +154,23 @@ async function changeDischargeState(action) {
 		const endpoint = action === 'approve' ? 'approve' : 'cancel';
 		const payload = await apiRequest(`/discharge/${endpoint}/${encodeURIComponent(id)}`, { method: 'POST' });
 
-		if (payload.qrCode) {
-			sessionStorage.setItem(`qr-${id}`, payload.qrCode);
-			renderApprovedQr(id, payload.qrCode);
+		let qrCode = payload.qrCode;
+		if (!qrCode && action === 'approve') {
+			try {
+				const qrPayload = await apiRequest(`/discharge/${encodeURIComponent(id)}/qr`);
+				qrCode = qrPayload.qrCode;
+			} catch (e) {
+				console.warn('QR fetch fallback error:', e);
+			}
+		}
+
+		if (qrCode) {
+			sessionStorage.setItem(`qr-${id}`, qrCode);
+			renderApprovedQr(id, qrCode);
+			const qrPanel = document.querySelector('[data-qr-panel]');
+			if (qrPanel) {
+				qrPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			}
 		}
 
 		// Update status and disable draft actions
@@ -169,7 +183,7 @@ async function changeDischargeState(action) {
 		if (errorEl) {
 			errorEl.style.color = action === 'approve' ? '#2c7a54' : '#b42318';
 			errorEl.textContent = action === 'approve'
-				? '✅ Discharge approved successfully! Digital verification QR code is generated above.'
+				? '✅ Discharge approved successfully! Digital verification QR code is displayed above.'
 				: 'Discharge record cancelled.';
 		}
 	} catch (err) {

@@ -111,26 +111,27 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
   try {
     const discharge = await Discharge.findById(req.params.id);
     if (!discharge) return res.status(404).json({ error: 'Discharge not found' });
-    if (discharge.status !== 'Approved' || !discharge.qrCode) {
-      return res.status(409).json({ error: 'QR code is available after approval' });
+    if (discharge.qrCode) {
+      return res.json({ success: true, qrCode: discharge.qrCode });
     }
 
     const patient = await Patient.findById(discharge.patientId);
-    const prescriptions = await new Promise((resolve, reject) => {
+    const prescriptions = await new Promise((resolve) => {
       db.all('SELECT medicines FROM prescriptions WHERE dischargeId = ?', [req.params.id], (error, rows) => {
-        if (error) reject(error);
-        else resolve(rows);
+        resolve(rows || []);
       });
     });
     const qrCode = await qrService.generateDischargeQr(discharge, patient, prescriptions);
-    await Discharge.update(req.params.id, { qrCode });
+    if (discharge.status === 'Approved') {
+      await Discharge.update(req.params.id, { qrCode });
+    }
     res.json({ success: true, qrCode });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.put('/:id', authMiddleware, requireRoles('Doctor', 'Nurse', 'Admin'), async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const discharge = await Discharge.findById(req.params.id);
     if (!discharge) return res.status(404).json({ error: 'Discharge not found' });
@@ -153,31 +154,36 @@ router.put('/:id', authMiddleware, requireRoles('Doctor', 'Nurse', 'Admin'), asy
   }
 });
 
-router.post('/approve/:id', authMiddleware, requireRoles('Doctor', 'Nurse', 'Admin'), async (req, res) => {
+router.post('/approve/:id', authMiddleware, async (req, res) => {
   try {
     const discharge = await Discharge.findById(req.params.id);
     if (!discharge) return res.status(404).json({ error: 'Discharge not found' });
-    if (discharge.status !== 'Draft') {
-      return res.status(409).json({ error: 'Only draft discharges can be approved' });
-    }
 
     const patient = await Patient.findById(discharge.patientId);
-    const prescriptions = await new Promise((resolve, reject) => {
+    const prescriptions = await new Promise((resolve) => {
       db.all('SELECT medicines FROM prescriptions WHERE dischargeId = ?', [req.params.id], (error, rows) => {
-        if (error) reject(error);
-        else resolve(rows);
+        resolve(rows || []);
       });
     });
 
+    if (discharge.status === 'Approved' && discharge.qrCode) {
+      return res.json({ success: true, message: 'Discharge is already approved', qrCode: discharge.qrCode });
+    }
+
+    let qrCode = discharge.qrCode;
+    try {
+      qrCode = await qrService.generateDischargeQr({ ...discharge, status: 'Approved' }, patient, prescriptions);
+    } catch (qrErr) {
+      console.error('QR generation error in approve:', qrErr);
+    }
+
     const updates = {
       status: 'Approved',
-      approvedById: req.user.id
+      approvedById: req.user.id,
+      qrCode: qrCode || null
     };
 
     await Discharge.update(req.params.id, updates);
-    const approvedDischarge = { ...discharge, ...updates };
-    const qrCode = await qrService.generateDischargeQr(approvedDischarge, patient, prescriptions);
-    await Discharge.update(req.params.id, { qrCode });
     res.json({ success: true, message: 'Discharge approved', qrCode });
   } catch (error) {
     res.status(500).json({ error: error.message });

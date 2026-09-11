@@ -588,7 +588,7 @@
         // 2. Check sessionStorage
         // 3. If approved, safely try fetching from API
         let qrCodeUrl = discharge.qrCode || sessionStorage.getItem(`qr-${id}`);
-        if (!qrCodeUrl && discharge.status === 'Approved') {
+        if (!qrCodeUrl) {
           try {
             const qrPayload = await apiRequest(`/discharge/${encodeURIComponent(id)}/qr`);
             if (qrPayload && qrPayload.qrCode) {
