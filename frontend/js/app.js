@@ -5,7 +5,7 @@ async function loadDashboard() {
 	try {
 		const payload = await apiRequest('/discharge/all');
 		const list = document.querySelector('[data-discharges]');
-		list.innerHTML = payload.discharges.map(discharge => `<tr><td>${discharge.dischargeId}</td><td>${discharge.patientName || 'Unknown'}</td><td><span class="status">${discharge.status}</span></td><td><a class="btn btn-small" href="ocr-editor.html?id=${encodeURIComponent(discharge.id)}">Open</a></td></tr>`).join('') || '<tr><td colspan="4">No discharges found.</td></tr>';
+		list.innerHTML = payload.discharges.map(discharge => `<tr><td>${discharge.dischargeId}</td><td>${discharge.patientName || 'Unknown'}</td><td><span class="status">${discharge.status}</span></td><td><div style="display:flex;gap:6px;"><a class="btn btn-small" href="ocr-editor.html?id=${encodeURIComponent(discharge.id)}">Review</a><a class="btn btn-small btn-secondary" href="print-discharge.html?id=${encodeURIComponent(discharge.id)}">Print</a></div></td></tr>`).join('') || '<tr><td colspan="4">No discharges found.</td></tr>';
 	} catch (error) { document.querySelector('[data-error]').textContent = error.message; }
 }
 

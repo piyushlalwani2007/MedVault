@@ -19,6 +19,8 @@ async function loadEditor() {
 	document.querySelectorAll('[data-action]').forEach(button => { button.dataset.id = id; });
 	const printLink = document.querySelector('[data-print]');
 	if (printLink) printLink.href = `print-discharge.html?id=${encodeURIComponent(id)}`;
+	const printAction = document.querySelector('[data-print-action]');
+	if (printAction) printAction.href = `print-discharge.html?id=${encodeURIComponent(id)}`;
 	if (discharge.status !== 'Draft') document.querySelectorAll('[data-draft-action]').forEach(element => { element.disabled = true; });
 	if (typeof loadOcrHistory === 'function') loadOcrHistory(id);
 }

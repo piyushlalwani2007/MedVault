@@ -1,3 +1,638 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Print Discharge</title><link rel="stylesheet" href="../css/style.css"></head>
-<body><main class="container page-layout"><section class="panel"><p class="eyebrow">Approved discharge</p><h1>Print discharge</h1><div data-record></div><img data-qr alt="Discharge QR code"><button class="btn btn-primary" onclick="window.print()">Print</button></section></main><script src="../js/api.js"></script><script src="../js/auth.js"></script><script>async function loadPrint(){if(!requireAuthentication())return;const id=new URLSearchParams(location.search).get('id');if(!id)return;const record=await apiRequest(`/discharge/${encodeURIComponent(id)}`);const qr=await apiRequest(`/discharge/${encodeURIComponent(id)}/qr`);const patient=record.patient;document.querySelector('[data-record]').innerHTML=`<p><strong>Hospital:</strong> ${document.title.split(' | ')[0]}</p><p><strong>Name:</strong> ${patient.name}</p><p><strong>Age:</strong> ${patient.age}</p><p><strong>Test reports:</strong> ${patient.testDetails}</p><p><strong>Prescribed medicine:</strong> ${record.prescriptions.flatMap(item => item.medicines || []).map(item => item.name).join(', ') || 'None'}</p><p><strong>Disease:</strong> ${patient.disease}</p>`;document.querySelector('[data-qr]').src=qr.qrCode;}loadPrint();</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Print Discharge Summary | Hospital Discharge System</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Screen layout helpers */
+    .print-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 14px 20px;
+      background: #ffffff;
+      border: 1px solid var(--line, #dbe4e1);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-pill.approved { background: #e5f3ea; color: #2c7a54; }
+    .status-pill.draft { background: #fbf0dd; color: #a96a16; }
+    .status-pill.cancelled { background: #fbeae7; color: #b14538; }
+
+    /* The Clinical Discharge Sheet */
+    .discharge-sheet {
+      background: #ffffff;
+      color: #12201d;
+      border: 1px solid #c9d5d1;
+      border-radius: 12px;
+      padding: 40px 48px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+      line-height: 1.5;
+    }
+
+    .hospital-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px double #0c5850;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .hospital-title-block h1 {
+      font-family: var(--font-display, Georgia, serif);
+      font-size: 26px;
+      color: #0c5850;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.5px;
+    }
+    .hospital-title-block p {
+      margin: 0;
+      font-size: 13px;
+      color: #51625f;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    .document-meta-block {
+      text-align: right;
+      font-size: 13px;
+      color: #334340;
+    }
+    .document-meta-block .doc-id {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0c5850;
+      font-family: var(--font-mono, monospace);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      background: #f4f8f6;
+      border: 1px solid #dbe4e1;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    .meta-item .label {
+      color: #637571;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .meta-item .value {
+      font-weight: 600;
+      color: #12201d;
+    }
+
+    .doc-section {
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .section-header {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #0c5850;
+      border-bottom: 1px solid #dbe4e1;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-content {
+      font-size: 14px;
+      color: #243532;
+      white-space: pre-wrap;
+      padding-left: 2px;
+    }
+
+    .meds-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .meds-table th {
+      background: #eef5f2;
+      color: #0c5850;
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid #c9d5d1;
+      font-weight: 700;
+    }
+    .meds-table td {
+      padding: 8px 12px;
+      border: 1px solid #dbe4e1;
+      color: #12201d;
+    }
+    .meds-table tr:nth-child(even) td {
+      background: #fbfdfc;
+    }
+
+    .verification-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 2px solid #dbe4e1;
+      padding-top: 20px;
+      margin-top: 30px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .sign-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: #51625f;
+      min-width: 240px;
+    }
+    .sign-line {
+      border-bottom: 1px dashed #718380;
+      height: 44px;
+      margin-bottom: 4px;
+    }
+    .qr-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+    .qr-image {
+      width: 110px;
+      height: 110px;
+      border: 1px solid #c9d5d1;
+      border-radius: 6px;
+      padding: 4px;
+      background: #fff;
+    }
+    .qr-label {
+      font-size: 11px;
+      color: #51625f;
+      max-width: 140px;
+    }
+
+    .draft-watermark {
+      border: 2px dashed #d97706;
+      background: #fffbeb;
+      color: #b45309;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .select-discharge-card {
+      background: #fff;
+      border: 1px solid #dbe4e1;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 16px;
+    }
+
+    /* Print specific styling */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm 16mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      header.topbar,
+      .print-toolbar,
+      .no-print,
+      nav,
+      button,
+      .select-discharge-card {
+        display: none !important;
+      }
+      .page-layout {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .container {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .discharge-sheet {
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        color: #000 !important;
+      }
+      .meta-grid {
+        background: #f8faf9 !important;
+        border: 1px solid #bbb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .meds-table th {
+        background: #eef2f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .hospital-header {
+        border-bottom: 2px solid #000 !important;
+      }
+      .hospital-title-block h1 {
+        color: #000 !important;
+      }
+      .section-header {
+        color: #000 !important;
+        border-bottom: 1px solid #666 !important;
+      }
+      .doc-section, .verification-footer {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar no-print">
+    <strong>Hospital Discharge System</strong>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="create-discharge.html">New discharge</a>
+      <a href="notifications.html">Notifications</a>
+    </nav>
+  </header>
+
+  <main class="container page-layout">
+    <!-- Toolbar on screen (hidden on print) -->
+    <div class="print-toolbar no-print">
+      <div>
+        <span class="eyebrow" style="display:block;margin-bottom:2px;">Medical Record</span>
+        <h2 style="font-size:18px;margin:0;" data-toolbar-title>Discharge Document</h2>
+      </div>
+      <div class="toolbar-actions">
+        <span class="status-pill" data-status-pill style="display:none;"></span>
+        <button class="btn btn-secondary" onclick="history.back()" type="button">← Back</button>
+        <button class="btn btn-primary" onclick="window.print()" type="button">🖨️ Print Document</button>
+      </div>
+    </div>
+
+    <!-- Error / Loading container -->
+    <div data-message-box class="no-print" style="margin-bottom:16px;"></div>
+
+    <!-- Discharge Selection (shown if no ID in URL) -->
+    <div data-selector-card class="select-discharge-card no-print" style="display:none;">
+      <h3>Select a Discharge to Print</h3>
+      <p class="muted">Choose any patient record below to load its complete printable summary.</p>
+      <div class="table-wrap" style="margin-top:16px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Discharge ID</th>
+              <th>Patient</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody data-discharge-list>
+            <tr><td colspan="4">Loading records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- The Printable Discharge Paper -->
+    <article class="discharge-sheet" id="discharge-paper" style="display:none;">
+      <!-- Hospital Header -->
+      <div class="hospital-header">
+        <div class="hospital-title-block">
+          <h1 data-field="hospitalName">Hospital Discharge System</h1>
+          <p>Official Patient Discharge Summary</p>
+        </div>
+        <div class="document-meta-block">
+          <div>Discharge ID: <span class="doc-id" data-field="dischargeId">--</span></div>
+          <div style="margin-top:4px;">Printed on: <span data-field="printDate">--</span></div>
+          <div style="margin-top:4px;">Status: <strong data-field="statusText">--</strong></div>
+        </div>
+      </div>
+
+      <!-- Draft notice if not approved -->
+      <div class="draft-watermark" data-field="draftNotice" style="display:none;">
+        ⚠️ DRAFT RECORD &mdash; Pending final physician approval. Digital QR verification is sealed once approved.
+      </div>
+
+      <!-- Patient & Admission Info -->
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="label">Patient Name</div>
+          <div class="value" data-field="patientName">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">MRN / Patient ID</div>
+          <div class="value" data-field="patientMRN">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Age / Gender</div>
+          <div class="value" data-field="patientAgeGender">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Blood Group</div>
+          <div class="value" data-field="bloodGroup">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Admission Date</div>
+          <div class="value" data-field="admissionDate">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Discharge Date</div>
+          <div class="value" data-field="dischargeDate">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Contact Phone</div>
+          <div class="value" data-field="patientPhone">--</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Emergency Contact</div>
+          <div class="value" data-field="emergencyContact">--</div>
+        </div>
+      </div>
+
+      <!-- Clinical Findings & Diagnosis -->
+      <section class="doc-section">
+        <div class="section-header">1. Diagnosis & Clinical Condition</div>
+        <div class="section-content" data-field="diagnosis">--</div>
+      </section>
+
+      <!-- Tests & Investigations -->
+      <section class="doc-section">
+        <div class="section-header">2. Diagnostic Tests & Laboratory Investigations</div>
+        <div class="section-content" data-field="testDetails">--</div>
+      </section>
+
+      <!-- Treatment Summary -->
+      <section class="doc-section">
+        <div class="section-header">3. Treatment & Procedures Undertaken</div>
+        <div class="section-content" data-field="treatment">--</div>
+      </section>
+
+      <!-- Prescribed Medications -->
+      <section class="doc-section">
+        <div class="section-header">4. Prescribed Discharge Medications</div>
+        <div data-field="prescriptionsContainer">
+          <table class="meds-table">
+            <thead>
+              <tr>
+                <th style="width:30px;">#</th>
+                <th>Medication Name</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody data-field="medsTableBody">
+              <tr><td colspan="5" class="muted">None recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Discharge Instructions & Follow-up -->
+      <section class="doc-section">
+        <div class="section-header">5. Discharge Instructions & Follow-up Advice</div>
+        <div class="section-content" data-field="dischargeInstructions">--</div>
+      </section>
+
+      <!-- Signatures and QR Code Verification Footer -->
+      <div class="verification-footer">
+        <div class="sign-block">
+          <div class="sign-line"></div>
+          <div><strong>Attending Physician / Authorized Signature</strong></div>
+          <div style="font-size:12px;color:#718380;">Signed on: <span data-field="signDate">--</span></div>
+          <div style="font-size:11px;color:#8b9895;margin-top:4px;">Official discharge record validated by medical records department.</div>
+        </div>
+
+        <div class="qr-block">
+          <img class="qr-image" data-field="qrImage" alt="Digital Verification QR" style="display:none;">
+          <div class="qr-placeholder" data-field="qrPlaceholder" style="width:110px;height:110px;border:1px dashed #bbb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#888;text-align:center;padding:8px;">
+            QR available upon approval
+          </div>
+          <div class="qr-label">Scan to verify digital clinical summary</div>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    function setText(fieldKey, value, fallback = 'Not specified') {
+      const el = document.querySelector(`[data-field="${fieldKey}"]`);
+      if (el) el.textContent = (value !== null && value !== undefined && String(value).trim() !== '') ? value : fallback;
+    }
+
+    function showMessage(msg, isError = false) {
+      const box = document.querySelector('[data-message-box]');
+      if (!box) return;
+      box.innerHTML = `<div style="padding:14px 18px;border-radius:8px;font-size:14px;background:${isError ? '#fbeae7' : '#e5f3ea'};color:${isError ? '#b14538' : '#2c7a54'};border:1px solid ${isError ? '#f5c2bc' : '#c2e3ce'};">${msg}</div>`;
+    }
+
+    async function loadDischargeSelector() {
+      const selectorCard = document.querySelector('[data-selector-card]');
+      if (selectorCard) selectorCard.style.display = 'block';
+
+      try {
+        const payload = await apiRequest('/discharge/all');
+        const tbody = document.querySelector('[data-discharge-list]');
+        if (!payload.discharges || !payload.discharges.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="muted">No discharge records found. <a href="create-discharge.html">Create one</a>.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = payload.discharges.map(item => `
+          <tr>
+            <td><strong>${escapeHtml(item.dischargeId)}</strong></td>
+            <td>${escapeHtml(item.patientName || 'Unknown')}</td>
+            <td><span class="status">${escapeHtml(item.status)}</span></td>
+            <td><a class="btn btn-small btn-primary" href="print-discharge.html?id=${encodeURIComponent(item.id)}">Print</a></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        showMessage(`Could not load records: ${err.message}`, true);
+      }
+    }
+
+    function renderMedications(prescriptions) {
+      const tbody = document.querySelector('[data-field="medsTableBody"]');
+      if (!tbody) return;
+
+      const allMeds = [];
+      (prescriptions || []).forEach(p => {
+        const list = Array.isArray(p.medicines) ? p.medicines : [];
+        list.forEach(m => allMeds.push(m));
+      });
+
+      if (!allMeds.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center;padding:12px;">No take-home medications recorded.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = allMeds.map((med, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td><strong>${escapeHtml(med.name || 'Unnamed')}</strong></td>
+          <td>${escapeHtml(med.dosage || '--')}</td>
+          <td>${escapeHtml(med.frequency || '--')}</td>
+          <td>${escapeHtml(med.duration || '--')}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadPrint() {
+      if (!requireAuthentication()) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+
+      if (!id) {
+        document.querySelector('[data-toolbar-title]').textContent = 'Select Discharge to Print';
+        loadDischargeSelector();
+        return;
+      }
+
+      showMessage('Loading discharge record...');
+
+      try {
+        const payload = await apiRequest(`/discharge/${encodeURIComponent(id)}`);
+        const discharge = payload.discharge;
+        const patient = payload.patient || {};
+        const prescriptions = payload.prescriptions || [];
+
+        // Update toolbar
+        document.querySelector('[data-toolbar-title]').textContent = `Discharge ${discharge.dischargeId}`;
+        const pill = document.querySelector('[data-status-pill]');
+        if (pill) {
+          pill.textContent = discharge.status;
+          pill.className = `status-pill ${discharge.status.toLowerCase()}`;
+          pill.style.display = 'inline-flex';
+        }
+
+        // Show discharge sheet
+        const sheet = document.querySelector('#discharge-paper');
+        if (sheet) sheet.style.display = 'block';
+
+        // Populate fields
+        setText('hospitalName', window.HOSPITAL_NAME || 'Hospital Discharge System');
+        setText('dischargeId', discharge.dischargeId);
+        setText('printDate', new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }));
+        setText('signDate', new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }));
+        setText('statusText', discharge.status);
+
+        if (discharge.status !== 'Approved') {
+          const draftNotice = document.querySelector('[data-field="draftNotice"]');
+          if (draftNotice) draftNotice.style.display = 'block';
+        }
+
+        // Patient info
+        setText('patientName', patient.name);
+        setText('patientMRN', patient.mrn);
+        const ageGender = [patient.age ? `${patient.age} Yrs` : '', patient.gender || ''].filter(Boolean).join(' / ');
+        setText('patientAgeGender', ageGender);
+        setText('bloodGroup', patient.bloodGroup);
+        setText('admissionDate', discharge.admissionDate);
+        setText('dischargeDate', discharge.dischargeDate);
+        setText('patientPhone', patient.phone);
+        setText('emergencyContact', patient.emergencyContact);
+
+        // Clinical details
+        setText('diagnosis', discharge.diagnosis || patient.disease);
+        setText('testDetails', patient.testDetails);
+        setText('treatment', discharge.treatment);
+        setText('dischargeInstructions', discharge.dischargeInstructions);
+
+        // Prescriptions table
+        renderMedications(prescriptions);
+
+        // QR Code resolution:
+        // 1. First check if QR is already on the discharge record
+        // 2. Check sessionStorage
+        // 3. If approved, safely try fetching from API
+        let qrCodeUrl = discharge.qrCode || sessionStorage.getItem(`qr-${id}`);
+        if (!qrCodeUrl && discharge.status === 'Approved') {
+          try {
+            const qrPayload = await apiRequest(`/discharge/${encodeURIComponent(id)}/qr`);
+            if (qrPayload && qrPayload.qrCode) {
+              qrCodeUrl = qrPayload.qrCode;
+            }
+          } catch (qrErr) {
+            console.warn('QR code fetch failed:', qrErr);
+          }
+        }
+
+        const qrImg = document.querySelector('[data-field="qrImage"]');
+        const qrPlaceholder = document.querySelector('[data-field="qrPlaceholder"]');
+
+        if (qrCodeUrl) {
+          if (qrImg) {
+            qrImg.src = qrCodeUrl;
+            qrImg.style.display = 'block';
+          }
+          if (qrPlaceholder) qrPlaceholder.style.display = 'none';
+        } else {
+          if (qrImg) qrImg.style.display = 'none';
+          if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
+        }
+
+        // Clear loading message
+        const box = document.querySelector('[data-message-box]');
+        if (box) box.innerHTML = '';
+
+      } catch (err) {
+        showMessage(`Failed to load discharge record: ${err.message}`, true);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[character]));
+    }
+
+    loadPrint();
+  </script>
+</body>
+</html>
