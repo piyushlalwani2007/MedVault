@@ -3,31 +3,300 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Signup | Hospital Discharge System</title>
+  <title>Staff Registration | MedVault</title>
   <link rel="stylesheet" href="../css/style.css">
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 10%, #eef7f4 0%, #f6faf8 45%, #e8f3f0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+
+    .auth-card {
+      width: min(100%, 500px);
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(19, 111, 99, 0.12);
+      border-radius: 22px;
+      padding: 36px 36px;
+      box-shadow: 0 20px 60px rgba(12, 88, 80, 0.10), 0 4px 16px rgba(0, 0, 0, 0.03);
+      backdrop-filter: blur(16px);
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line-soft, #e9efed);
+    }
+    .auth-brand-icon {
+      font-size: 26px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #e3f1ee 0%, #cde8e2 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(19, 111, 99, 0.12);
+    }
+    .auth-brand-text h2 {
+      margin: 0;
+      font-size: 20px;
+      font-family: var(--font-display, Georgia, serif);
+      color: #0c5850;
+      letter-spacing: -0.3px;
+    }
+    .auth-brand-text p {
+      margin: 0;
+      font-size: 11px;
+      color: #637571;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .col-span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #243532;
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrapper input, .input-wrapper select {
+      width: 100%;
+      padding: 12px 14px 12px 38px;
+      border: 1.5px solid var(--line, #dbe4e1);
+      border-radius: 10px;
+      font: inherit;
+      font-size: 14px;
+      background: #ffffff;
+      transition: all 0.2s ease;
+      color: var(--ink);
+    }
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      outline: none;
+      border-color: var(--brand, #136f63);
+      box-shadow: 0 0 0 3px rgba(19, 111, 99, 0.15);
+    }
+    .input-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 15px;
+      color: #8b9895;
+      pointer-events: none;
+    }
+    .toggle-pwd {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #718380;
+      padding: 4px;
+    }
+    .toggle-pwd:hover { color: var(--brand); }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px 18px;
+      background: linear-gradient(135deg, #0c5850 0%, #136f63 100%);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(12, 88, 80, 0.25);
+      transition: all 0.2s ease;
+      margin-top: 6px;
+    }
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(12, 88, 80, 0.32);
+    }
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .alert-banner {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.4;
+    }
+    .alert-error {
+      background: #fbeae7;
+      color: #b14538;
+      border: 1px solid #f5c2bc;
+    }
+    .alert-success {
+      background: #e5f3ea;
+      color: #2c7a54;
+      border: 1px solid #c2e3ce;
+    }
+
+    .auth-footer {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 13px;
+      color: #637571;
+      padding-top: 16px;
+      border-top: 1px solid var(--line-soft, #e9efed);
+    }
+    .auth-footer a {
+      color: var(--brand);
+      font-weight: 700;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 520px) {
+      .form-grid-2 { grid-template-columns: 1fr; }
+      .auth-card { padding: 26px 20px; }
+    }
+  </style>
 </head>
 <body>
-  <main class="container auth-layout">
-    <section class="panel auth-panel">
-      <p class="eyebrow">Hospital Discharge System</p>
-      <h1>Staff signup</h1>
-      <p>Your account is created immediately and can be used right after signup.</p>
-      <form id="signup-form" class="form-stack">
-        <label>Staff ID<input name="staffId" required></label>
-        <label>Name<input name="name" required></label>
-        <label>Email<input name="email" type="email" required></label>
-        <label>Department<input name="department" required></label>
-        <label>Password<input name="password" type="password" minlength="8" required></label>
-        <label>Role<select name="role" required><option value="Doctor">Doctor</option><option value="Nurse">Nurse</option></select></label>
-        <button class="btn btn-primary" type="submit">Submit signup</button>
-        <p class="form-error" data-error role="alert"></p>
-        <p data-success></p>
-      </form>
-      <p class="mt-2"><a href="login.html">Back to sign in</a></p>
-    </section>
-  </main>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">🏥</div>
+      <div class="auth-brand-text">
+        <h2>MedVault</h2>
+        <p>Staff Registration</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <h1 style="font-size:22px;margin:0 0 4px 0;color:#0e2c2a;">Create Staff Account</h1>
+      <p style="margin:0;font-size:13px;color:#637571;">Sign up to create and approve hospital discharge summaries.</p>
+    </div>
+
+    <form id="signup-form" onsubmit="handleSignup(event)">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label for="staffId">Staff ID / Code *</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🆔</span>
+            <input id="staffId" name="staffId" placeholder="e.g. DOC204" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input id="name" name="name" placeholder="e.g. Dr. Priya Patel" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Work Email *</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉️</span>
+          <input id="email" name="email" type="email" placeholder="priya.patel@hospital.com" required>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label for="department">Department *</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🏛️</span>
+            <select id="department" name="department" required>
+              <option value="">Select department</option>
+              <option value="General Medicine">General Medicine</option>
+              <option value="General Surgery">General Surgery</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Pediatrics">Pediatrics</option>
+              <option value="Emergency & ICU">Emergency & ICU</option>
+              <option value="Orthopedics">Orthopedics</option>
+              <option value="Radiology">Radiology</option>
+              <option value="Pathology">Pathology</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="role">Clinical Role *</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🩺</span>
+            <select id="role" name="role" required>
+              <option value="Doctor">Doctor</option>
+              <option value="Nurse">Nurse</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password (min 8 characters) *</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input id="password" name="password" type="password" minlength="8" placeholder="Create strong password" required autocomplete="new-password">
+          <button type="button" class="toggle-pwd" onclick="togglePasswordVisibility('password', this)" title="Show/Hide Password">👁️</button>
+        </div>
+      </div>
+
+      <button class="btn-submit" type="submit">Create Staff Account &rarr;</button>
+
+      <div class="alert-banner alert-error" data-error role="alert"></div>
+      <div class="alert-banner alert-success" data-success role="status"></div>
+    </form>
+
+    <div class="auth-footer">
+      <span>Already have an account?</span>
+      <a href="login.html">Sign in here</a>
+    </div>
+  </div>
+
   <script src="../js/api.js"></script>
   <script src="../js/signup.js"></script>
-  <script>document.querySelector('#signup-form').addEventListener('submit', handleSignup);</script>
+  <script>
+    function togglePasswordVisibility(fieldId, btn) {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        const isPwd = field.type === 'password';
+        field.type = isPwd ? 'text' : 'password';
+        btn.textContent = isPwd ? '🙈' : '👁️';
+      }
+    }
+  </script>
 </body>
 </html>
